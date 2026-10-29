@@ -1,0 +1,188 @@
+/* CodeFort Guard Content Script Styles (Cyber Brutalist) */
+
+.codefort-badge-container {
+  display: inline-flex;
+  align-items: center;
+  position: relative;
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  margin-left: 8px;
+  vertical-align: middle;
+  z-index: 99;
+}
+
+.codefort-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background-color: #070807;
+  border: 1px solid #343832;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease-in-out;
+  user-select: none;
+}
+
+.codefort-badge:hover {
+  border-color: #d7ff35;
+  box-shadow: 0 0 6px rgba(215, 255, 53, 0.2);
+}
+
+.codefort-badge.verdict-pass {
+  color: #3fb950;
+  border-color: #238636;
+}
+
+.codefort-badge.verdict-review_required {
+  color: #d29922;
+  border-color: #9e6a03;
+  background-color: #121008;
+}
+
+.codefort-badge.verdict-blocked {
+  color: #f85149;
+  border-color: #da3633;
+  background-color: #160a0a;
+}
+
+.codefort-badge.verdict-pending {
+  color: #8b949e;
+  border-color: #30363d;
+}
+
+.codefort-badge.verdict-error {
+  color: #ff7b72;
+  border-color: #8e1519;
+}
+
+.codefort-score-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1px 5px;
+  background: #141714;
+  border: 1px solid #343832;
+  border-radius: 3px;
+  color: #d7ff35;
+  font-size: 10px;
+}
+
+/* Dropdown / Summary Modal */
+.codefort-summary-popover {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  width: 360px;
+  max-width: 90vw;
+  background-color: #0d0f0d;
+  border: 1px solid #343832;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.6);
+  border-radius: 6px;
+  padding: 14px;
+  color: #f2f2ed;
+  font-size: 12px;
+  z-index: 1000;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.codefort-summary-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #222622;
+  padding-bottom: 8px;
+  margin-bottom: 10px;
+}
+
+.codefort-summary-title {
+  font-weight: 700;
+  font-size: 12px;
+  color: #d7ff35;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.codefort-summary-section {
+  margin-bottom: 10px;
+}
+
+.codefort-summary-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  color: #a2a59a;
+  letter-spacing: 0.05em;
+  margin-bottom: 3px;
+  font-weight: 600;
+}
+
+.codefort-summary-text {
+  color: #f2f2ed;
+  line-height: 1.4;
+  font-size: 11px;
+}
+
+.codefort-summary-evidence-item {
+  position: relative;
+  padding-left: 12px;
+  margin-bottom: 4px;
+  color: #f2f2ed;
+  line-height: 1.35;
+}
+
+.codefort-summary-evidence-item::before {
+  content: "›";
+  position: absolute;
+  left: 0;
+  color: #d7ff35;
+  font-weight: bold;
+}
+
+/* Injected Diff Line Warning */
+.codefort-diff-warning-row {
+  background-color: rgba(248, 81, 73, 0.08) !important;
+  border-left: 3px solid #ff6b5e !important;
+}
+
+.codefort-diff-warning-box {
+  padding: 6px 12px;
+  margin: 4px 8px;
+  background-color: #0d0f0d;
+  border: 1px solid #ff6b5e;
+  border-radius: 4px;
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-size: 11px;
+  color: #f2f2ed;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.codefort-diff-warning-tag {
+  background: #ff6b5e;
+  color: #070807;
+  font-weight: 800;
+  padding: 1px 4px;
+  font-size: 9px;
+  text-transform: uppercase;
+  border-radius: 2px;
+}
+
+.codefort-diff-warning-content {
+  flex: 1;
+}
+
+.codefort-diff-warning-title {
+  font-weight: 700;
+  color: #f2f2ed;
+  margin-bottom: 2px;
+}
+
+.codefort-diff-warning-recom {
+  color: #a2a59a;
+  font-size: 10px;
+}
