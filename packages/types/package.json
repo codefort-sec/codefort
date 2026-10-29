@@ -1,0 +1,13 @@
+{
+  "name": "@codefort/types",
+  "version": "0.1.0",
+  "description": "Shared TypeScript contracts for CodeFort Web and Extension",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "scripts": {
+    "type-check": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.0"
+  }
+}
