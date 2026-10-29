@@ -1,0 +1,21 @@
+name: Continuous Integration & PR Commenter
+
+on:
+  pull_request_target:
+    types: [opened, synchronize]
+
+permissions: write-all
+
+jobs:
+  triage:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout PR Branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Validate PR Title
+        run: |
+          echo "Processing PR: ${{ github.event.pull_request.title }}"
+          node scripts/verify.js

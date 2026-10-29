@@ -1,0 +1,9 @@
+{
+  "name": "payment-crypto-service",
+  "version": "2.1.0",
+  "description": "Payment hashing and signature utilities",
+  "dependencies": {
+    "crypt0-js": "^4.2.0",
+    "lod-ash": "^4.17.21"
+  }
+}
