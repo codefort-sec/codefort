@@ -1,0 +1,51 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+  --color-bg: #070807;
+  --color-surface: #0d0f0d;
+  --color-surface-raised: #141714;
+  --color-lime: #d7ff35;
+  --color-lime-muted: #a8c92a;
+  --color-text: #f2f2ed;
+  --color-text-muted: #a2a59a;
+  --color-text-dim: #686d64;
+  --color-border: #343832;
+  --color-border-strong: #62685b;
+}
+
+body {
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  overflow-x: hidden;
+}
+
+/* Subtle background technical grid */
+.tech-grid-bg {
+  background-image: 
+    linear-gradient(to right, rgba(52, 56, 50, 0.15) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(52, 56, 50, 0.15) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+/* Hazard stripe footer strip from design.md */
+.hazard-stripe {
+  background: repeating-linear-gradient(
+    -45deg,
+    #070807,
+    #070807 10px,
+    #d7ff35 10px,
+    #d7ff35 20px
+  );
+  height: 6px;
+  width: 100%;
+}
+
+/* Hard outlines and buttons */
+button:focus-visible, a:focus-visible {
+  outline: 2px solid var(--color-lime);
+  outline-offset: 2px;
+}
