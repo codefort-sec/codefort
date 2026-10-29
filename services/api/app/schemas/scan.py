@@ -35,3 +35,4 @@ class ScanResponse(BaseModel):
 
 class ScanCreateRequest(BaseModel):
     head_sha: Optional[str] = Field(None, description="Target commit SHA to scan")
+    files: Optional[Dict[str, str]] = Field(None, description="Optional map of file paths to content for scanning")

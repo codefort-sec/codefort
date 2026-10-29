@@ -131,6 +131,14 @@ class MockStore:
         self.pr_latest_scan[f"{repository}#{pr_number}"] = scan_id
         return scan
 
+    async def scan_files(self, repository: str, pr_number: int, files: Dict[str, str]) -> ScanResponse:
+        from app.services.engines.orchestrator import orchestrator
+        scan, findings = await orchestrator.execute_scan(repository, pr_number, files)
+        self.scans[scan.id] = scan
+        self.findings_by_scan[scan.id] = findings
+        self.pr_latest_scan[f"{repository}#{pr_number}"] = scan.id
+        return scan
+
 
 # Global singleton instance for local dev
 mock_store = MockStore()
