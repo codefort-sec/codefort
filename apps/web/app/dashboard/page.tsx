@@ -264,54 +264,34 @@ function DashboardContent() {
               </span>
             )}
           </div>
-          <h1 className="text-2xl font-black text-text uppercase">REPOSITORIES & PULL REQUESTS</h1>
+          <h1 className="text-2xl font-black text-text uppercase">REPOSITORIES &amp; PULL REQUESTS</h1>
         </div>
         <div className="flex items-center gap-3">
-          <Link
-            href="/extension"
-            className="border border-lime/60 hover:border-lime text-lime text-xs px-3 py-2 uppercase font-bold transition-colors"
-          >
-            Install Guard ↓
-          </Link>
-          <Link
-            href="/settings"
-            className="border border-border hover:border-lime text-text text-xs px-3 py-2 uppercase font-bold"
-          >
-            Extension Pairing
-          </Link>
           <button
             type="button"
             onClick={() => {
               setConnectError(null);
               setShowConnectModal(true);
             }}
-            className="bg-lime hover:bg-lime-muted text-bg text-xs px-4 py-2 uppercase font-extrabold transition-colors cursor-pointer"
+            className="bg-lime hover:bg-lime-muted text-bg text-xs px-4 py-2 uppercase font-extrabold transition-colors cursor-pointer flex items-center gap-1.5"
           >
-            + Connect Repository
+            <span>+</span>
+            <span>Connect Repository</span>
           </button>
         </div>
       </div>
 
-      {/* Repositories Section */}
-      <section className="flex flex-col gap-4">
-        <div className="text-xs text-text-dim uppercase tracking-wider flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <span>Connected Repositories ({repos.length})</span>
+      {/* Repositories Strip */}
+      <section className="flex flex-col gap-3">
+        <div className="flex items-center justify-between text-xs text-text-dim uppercase tracking-wider">
+          <span className="font-bold">Connected Repositories ({repos.length})</span>
+          {!repos.some((r) => r.full_name === "codefort-sec/vulnerable-test-repo") && (
             <button
               type="button"
               onClick={handleLoadDemoRepo}
-              className="text-[10px] text-lime/80 hover:text-lime uppercase font-bold border border-border px-2 py-0.5 hover:border-lime transition-colors cursor-pointer"
-              title="Ensure demo scenario repository is present"
+              className="text-[10px] text-lime hover:underline uppercase font-bold cursor-pointer"
             >
-              + Add Demo Repo
-            </button>
-          </div>
-          {repos.length === 0 && (
-            <button
-              onClick={handleLoadDemoRepo}
-              className="text-[11px] text-lime hover:underline uppercase font-bold cursor-pointer"
-            >
-              Restore Default Demo Repository
+              + Restore Demo Playground
             </button>
           )}
         </div>
@@ -344,70 +324,83 @@ function DashboardContent() {
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {repos.map((repo) => {
-              const isSelected = repo.full_name === selectedRepo;
-              const isDemo =
-                repo.full_name === "codefort-sec/vulnerable-test-repo" ||
-                repo.full_name === "codefort-sec/clean-test-repo";
-              return (
-                <div
-                  key={repo.id}
-                  onClick={() => setSelectedRepo(repo.full_name)}
-                  className={`border p-4 flex flex-col justify-between cursor-pointer transition-all ${
-                    isSelected
-                      ? "border-lime bg-surface-raised shadow-[0_0_15px_rgba(204,255,0,0.15)]"
-                      : "border-border bg-surface hover:border-text-dim"
-                  }`}
-                >
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-1.5">
-                        {isDemo ? (
-                          <span className="text-[9px] px-1.5 py-0.5 font-extrabold bg-lime/10 border border-lime text-lime uppercase tracking-wider">
-                            DEMO PLAYGROUND
-                          </span>
-                        ) : (
-                          <span className="text-[9px] px-1.5 py-0.5 font-bold bg-surface-raised border border-border text-text-dim uppercase tracking-wider">
-                            CONNECTED REPO
-                          </span>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span
-                          className={`text-[10px] px-2 py-0.5 font-bold ${
-                            isSelected
-                              ? "bg-lime text-bg font-extrabold"
-                              : "bg-surface-raised text-text-muted"
-                          }`}
-                        >
-                          {isSelected ? "ACTIVE" : "SELECT"}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={(e) => handleDisconnectRepo(repo.id, repo.full_name, e)}
-                          title="Disconnect repository"
-                          className="text-text-dim hover:text-danger text-xs px-1 hover:bg-danger/10 transition-colors"
-                        >
-                          ✕
-                        </button>
-                      </div>
-                    </div>
-                    <div className="text-sm font-bold text-text uppercase mb-1 truncate">{repo.full_name}</div>
-                    <div className="text-[11px] text-text-muted mb-4">
-                      {isDemo
-                        ? "Curated evaluation repository loaded with live supply chain attack scenarios."
-                        : "Automated scan triggers active on PR opened & synchronize."}
-                    </div>
+          <div className="flex flex-col gap-2">
+            {/* Horizontal Tabs Bar */}
+            <div className="flex items-center gap-2 overflow-x-auto pb-1 border-b border-border">
+              {repos.map((repo) => {
+                const isSelected = repo.full_name === selectedRepo;
+                const isDemo =
+                  repo.full_name === "codefort-sec/vulnerable-test-repo" ||
+                  repo.full_name === "codefort-sec/clean-test-repo";
+                return (
+                  <div
+                    key={repo.id}
+                    onClick={() => setSelectedRepo(repo.full_name)}
+                    className={`group flex items-center gap-2 px-3 py-2 text-xs font-bold border transition-all cursor-pointer shrink-0 ${
+                      isSelected
+                        ? "border-lime bg-surface-raised text-lime shadow-[0_0_12px_rgba(204,255,0,0.12)]"
+                        : "border-border bg-surface text-text hover:border-text-dim hover:text-white"
+                    }`}
+                  >
+                    <span className={`w-1.5 h-1.5 rounded-full ${isSelected ? "bg-lime animate-pulse" : "bg-text-dim"}`} />
+                    <span className="truncate max-w-[220px] md:max-w-[280px]">{repo.full_name}</span>
+                    {isDemo && (
+                      <span className={`text-[9px] px-1 py-0.2 font-extrabold uppercase ${isSelected ? "bg-lime/20 text-lime" : "bg-surface-raised text-text-dim"}`}>
+                        DEMO
+                      </span>
+                    )}
+                    <button
+                      type="button"
+                      onClick={(e) => handleDisconnectRepo(repo.id, repo.full_name, e)}
+                      title="Disconnect repository"
+                      className="ml-1 text-text-dim hover:text-danger text-xs opacity-60 group-hover:opacity-100 hover:bg-danger/20 px-1 rounded transition-all"
+                    >
+                      ✕
+                    </button>
                   </div>
+                );
+              })}
 
-                  <div className="border-t border-border pt-3 flex justify-between items-center text-xs">
-                    <span className="text-text-dim">POLICY: DEFAULT</span>
-                    <span className="text-lime font-bold">BLOCK ON CRITICAL</span>
-                  </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setConnectError(null);
+                  setShowConnectModal(true);
+                }}
+                className="border border-dashed border-border hover:border-lime text-text-dim hover:text-lime text-xs px-3 py-2 font-bold uppercase transition-colors shrink-0 flex items-center gap-1"
+              >
+                <span>+</span>
+                <span>Connect</span>
+              </button>
+            </div>
+
+            {/* Active Repo Context Sub-bar */}
+            {selectedRepo && (
+              <div className="flex flex-wrap items-center justify-between text-[11px] text-text-dim bg-surface/50 border border-border px-3 py-1.5 gap-2">
+                <div className="flex items-center gap-3">
+                  <span>
+                    ACTIVE: <strong className="text-text">{selectedRepo}</strong>
+                  </span>
+                  <span className="text-text-dim">|</span>
+                  <span>
+                    POLICY: <strong className="text-lime">BLOCK CRITICAL (DEFAULT)</strong>
+                  </span>
+                  <span className="text-text-dim hidden sm:inline">|</span>
+                  <span className="hidden sm:inline text-emerald-400 flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                    Webhooks Active
+                  </span>
                 </div>
-              );
-            })}
+                <a
+                  href={`https://github.com/${selectedRepo}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-text-muted hover:text-lime transition-colors font-medium flex items-center gap-1"
+                >
+                  GitHub ↗
+                </a>
+              </div>
+            )}
           </div>
         )}
       </section>
@@ -415,16 +408,17 @@ function DashboardContent() {
       {/* Pull Requests & Scan Activity */}
       <section className="flex flex-col gap-4">
         <div className="text-xs text-text-dim uppercase tracking-wider flex flex-col md:flex-row md:items-center justify-between gap-3">
-          <span>
-            Recent Pull Request Scans —{" "}
-            <span className="text-lime">{selectedRepo || "None selected"}</span>
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="font-bold text-text">Pull Request Security Audits</span>
+            <span className="text-lime">({prs.length})</span>
+          </div>
           <div className="flex items-center gap-3">
             <form onSubmit={handleCustomScan} className="flex items-center gap-1.5">
+              <span className="text-[10px] text-text-dim uppercase hidden sm:inline">Audit PR:</span>
               <input
                 type="number"
                 min="1"
-                placeholder="PR #"
+                placeholder="#"
                 value={customPRInput}
                 onChange={(e) => setCustomPRInput(e.target.value)}
                 className="w-16 bg-surface-raised border border-border focus:border-lime text-text px-2 py-1 text-[11px] font-mono outline-none"
@@ -434,21 +428,19 @@ function DashboardContent() {
                 disabled={customScanning || !customPRInput || !selectedRepo}
                 className="bg-lime hover:bg-lime-muted text-bg font-extrabold text-[10px] px-2.5 py-1 uppercase tracking-wider disabled:opacity-50 transition-colors cursor-pointer"
               >
-                {customScanning ? "..." : "⚡ Scan PR"}
+                {customScanning ? "..." : "⚡ Scan"}
               </button>
             </form>
-            <span className="text-[10px] text-text-dim hidden sm:inline">Auto-refresh active</span>
           </div>
         </div>
 
         <div className="border border-border bg-surface overflow-x-auto">
-          <table className="w-full text-left text-xs">
+          <table className="w-full text-left text-xs font-mono">
             <thead className="bg-surface-raised border-b border-border text-text-dim uppercase text-[10px]">
               <tr>
-                <th className="py-3 px-4">PR #</th>
-                <th className="py-3 px-4">Title</th>
+                <th className="py-3 px-4">Pull Request</th>
                 <th className="py-3 px-4">Author</th>
-                <th className="py-3 px-4">Verdict</th>
+                <th className="py-3 px-4">Security Verdict</th>
                 <th className="py-3 px-4">Risk Score</th>
                 <th className="py-3 px-4 text-right">Actions</th>
               </tr>
@@ -456,7 +448,7 @@ function DashboardContent() {
             <tbody className="divide-y divide-border">
               {prs.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="py-8 text-center text-text-dim font-mono">
+                  <td colSpan={5} className="py-12 text-center text-text-dim">
                     {loading
                       ? "FETCHING PULL REQUESTS..."
                       : selectedRepo
@@ -472,18 +464,34 @@ function DashboardContent() {
                   const isPass = scan?.verdict === "PASS";
 
                   return (
-                    <tr key={pr.pull_request_number} className="hover:bg-surface-raised/50 transition-colors">
-                      <td className="py-3 px-4 font-bold text-lime">#{pr.pull_request_number}</td>
-                      <td className="py-3 px-4 font-medium text-text max-w-xs truncate">{pr.title}</td>
-                      <td className="py-3 px-4 text-text-muted">@{pr.author_login}</td>
-                      <td className="py-3 px-4">
+                    <tr key={pr.pull_request_number} className="hover:bg-surface-raised/40 transition-colors">
+                      <td className="py-3.5 px-4 max-w-sm">
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-lime">#{pr.pull_request_number}</span>
+                          <span className="font-medium text-text truncate" title={pr.title}>
+                            {pr.title}
+                          </span>
+                        </div>
+                        {pr.html_url && (
+                          <a
+                            href={pr.html_url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-[10px] text-text-dim hover:text-lime transition-colors inline-block mt-0.5"
+                          >
+                            GitHub PR ↗
+                          </a>
+                        )}
+                      </td>
+                      <td className="py-3.5 px-4 text-text-muted">@{pr.author_login}</td>
+                      <td className="py-3.5 px-4">
                         {scanningPRs[pr.pull_request_number] ? (
-                          <span className="px-2 py-0.5 text-[10px] font-bold border rounded-none bg-lime/10 border-lime text-lime animate-pulse">
+                          <span className="px-2 py-0.5 text-[10px] font-bold bg-lime/10 border border-lime text-lime animate-pulse">
                             ANALYZING...
                           </span>
                         ) : scan ? (
                           <span
-                            className={`px-2 py-0.5 text-[10px] font-bold border rounded-none ${
+                            className={`px-2 py-0.5 text-[10px] font-bold border ${
                               isBlocked
                                 ? "bg-danger/10 border-danger text-danger"
                                 : isReview
@@ -494,25 +502,27 @@ function DashboardContent() {
                             {scan.verdict.replace(/_/g, " ")}
                           </span>
                         ) : (
-                          <span className="text-text-dim">NO SCAN</span>
+                          <span className="text-text-dim text-[11px]">NO SCAN</span>
                         )}
                       </td>
-                      <td className="py-3 px-4 font-bold">
+                      <td className="py-3.5 px-4 font-bold">
                         {scanningPRs[pr.pull_request_number] ? (
                           <span className="text-lime animate-pulse text-[11px]">CALCULATING...</span>
                         ) : scan?.risk_score !== undefined ? (
-                          <span className="text-lime">{scan.risk_score} / 100</span>
+                          <span className={scan.risk_score >= 80 ? "text-danger" : scan.risk_score >= 50 ? "text-amber-500" : "text-lime"}>
+                            {scan.risk_score} / 100
+                          </span>
                         ) : (
-                          "—"
+                          <span className="text-text-dim">—</span>
                         )}
                       </td>
-                      <td className="py-3 px-4 text-right">
+                      <td className="py-3.5 px-4 text-right">
                         <div className="flex items-center justify-end gap-2">
                           {scan ? (
                             <>
                               <Link
                                 href={`/scans/${scan.id}`}
-                                className="bg-lime hover:bg-lime-muted text-bg font-extrabold text-[10px] px-3 py-1 uppercase tracking-wider"
+                                className="bg-lime hover:bg-lime-muted text-bg font-extrabold text-[10px] px-3 py-1.5 uppercase tracking-wider transition-colors"
                               >
                                 FORENSICS ↗
                               </Link>
@@ -520,8 +530,8 @@ function DashboardContent() {
                                 type="button"
                                 onClick={() => handleTriggerScan(pr.pull_request_number)}
                                 disabled={scanningPRs[pr.pull_request_number]}
-                                title="Re-run security scan"
-                                className="border border-border hover:border-lime text-text text-[10px] px-2 py-1 transition-colors disabled:opacity-50"
+                                title="Re-scan pull request"
+                                className="border border-border hover:border-lime text-text text-[11px] px-2 py-1 transition-colors disabled:opacity-50"
                               >
                                 {scanningPRs[pr.pull_request_number] ? "..." : "↻"}
                               </button>
@@ -531,9 +541,9 @@ function DashboardContent() {
                               type="button"
                               onClick={() => handleTriggerScan(pr.pull_request_number)}
                               disabled={scanningPRs[pr.pull_request_number]}
-                              className="border border-lime text-lime hover:bg-lime hover:text-bg font-bold text-[10px] px-3 py-1 uppercase tracking-wider transition-colors disabled:opacity-50"
+                              className="border border-lime text-lime hover:bg-lime hover:text-bg font-bold text-[10px] px-3 py-1.5 uppercase tracking-wider transition-colors disabled:opacity-50"
                             >
-                              {scanningPRs[pr.pull_request_number] ? "SCANNING..." : "⚡ TRIGGER SCAN"}
+                              {scanningPRs[pr.pull_request_number] ? "SCANNING..." : "⚡ RUN SCAN"}
                             </button>
                           )}
                         </div>

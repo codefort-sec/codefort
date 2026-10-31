@@ -17,6 +17,8 @@ export const BadgeOverlay: React.FC<BadgeOverlayProps> = ({
   onRetry,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [showAlertBanner, setShowAlertBanner] = useState(false);
+  const [hasDismissed, setHasDismissed] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Close popover when clicking outside or pressing Escape
@@ -42,6 +44,32 @@ export const BadgeOverlay: React.FC<BadgeOverlayProps> = ({
       document.removeEventListener("keydown", handleKeyDown);
     };
   }, [isOpen]);
+
+  // Proactive automatic notification banner when opening a PR
+  useEffect(() => {
+    if (status && !hasDismissed) {
+      const dismissKey = `cf_dismiss_${status.repository}_${status.pull_request}`;
+      const wasDismissed = typeof sessionStorage !== "undefined" && sessionStorage.getItem(dismissKey);
+      if (!wasDismissed) {
+        setShowAlertBanner(true);
+        // Auto-dismiss clean PASS toasts after 4.5 seconds
+        if (status.verdict === "PASS") {
+          const timer = setTimeout(() => {
+            setShowAlertBanner(false);
+          }, 4500);
+          return () => clearTimeout(timer);
+        }
+      }
+    }
+  }, [status, hasDismissed]);
+
+  function handleDismissAlert() {
+    setShowAlertBanner(false);
+    setHasDismissed(true);
+    if (status && typeof sessionStorage !== "undefined") {
+      sessionStorage.setItem(`cf_dismiss_${status.repository}_${status.pull_request}`, "true");
+    }
+  }
 
   if (loading) {
     return (
@@ -102,6 +130,74 @@ export const BadgeOverlay: React.FC<BadgeOverlayProps> = ({
         ) : null}
       </button>
 
+      {/* Proactive Floating Alert Banner for Dangerous PRs & Clean Confirmations */}
+      {showAlertBanner && (
+        <div className={`codefort-floating-alert alert-${status.verdict.toLowerCase().replace(/_/g, "-")}`}>
+          <div className="codefort-floating-alert-header">
+            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+              <span className="codefort-alert-icon">
+                {status.verdict === "BLOCKED" ? "🚨" : status.verdict === "REVIEW_REQUIRED" ? "⚠️" : "🛡️"}
+              </span>
+              <span className="codefort-alert-title">
+                {status.verdict === "BLOCKED"
+                  ? "SECURITY ALERT: PR BLOCKED"
+                  : status.verdict === "REVIEW_REQUIRED"
+                  ? "SECURITY ADVISORY: REVIEW REQUIRED"
+                  : "CODEFORT: VERIFIED SAFE"}
+              </span>
+              {status.risk_score !== null && status.risk_score !== undefined && (
+                <span className="codefort-alert-score">RISK {status.risk_score}/100</span>
+              )}
+            </div>
+            <button
+              type="button"
+              className="codefort-alert-close"
+              onClick={handleDismissAlert}
+              title="Dismiss alert"
+            >
+              ✕
+            </button>
+          </div>
+
+          <div className="codefort-alert-body">
+            {status.verdict === "BLOCKED" ? (
+              <span>
+                Critical supply-chain threat detected ({totalFindings} finding{totalFindings > 1 ? "s" : ""}). Merging poses severe compromise risk.
+              </span>
+            ) : status.verdict === "REVIEW_REQUIRED" ? (
+              <span>
+                Suspicious dependencies or elevated workflow triggers detected. Security review required before approval.
+              </span>
+            ) : (
+              <span>
+                Pull request verified clean against supply-chain heuristics, package intelligence, and CI permission policies.
+              </span>
+            )}
+          </div>
+
+          <div className="codefort-alert-actions">
+            <button
+              type="button"
+              className="codefort-alert-btn-primary"
+              onClick={() => {
+                setIsOpen(true);
+                setShowAlertBanner(false);
+              }}
+            >
+              {status.verdict === "PASS" ? "View Analysis" : "View Threat Forensics ↗"}
+            </button>
+            <button
+              type="button"
+              className="codefort-alert-btn-secondary"
+              onClick={handleDismissAlert}
+            >
+              Dismiss
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Summary Popover Dropdown */}
       {isOpen && (
         <div className="codefort-summary-popover" role="dialog">
           <div className="codefort-summary-header">
