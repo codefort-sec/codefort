@@ -37,3 +37,8 @@ export async function setStoredConfig(config: Partial<ExtensionConfig>): Promise
     });
   });
 }
+
+export async function clearStoredAuth(): Promise<void> {
+  return setStoredConfig({ token: null, paired: false });
+}
+

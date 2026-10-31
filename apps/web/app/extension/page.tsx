@@ -116,9 +116,8 @@ export default function ExtensionGuidePage() {
                   </p>
                 </div>
                 <a
-                  href="https://github.com/codefort-sec/codefort/releases/download/v0.1.2/codefort-guard-chrome-v0.1.2.zip"
-                  target="_blank"
-                  rel="noopener noreferrer"
+                  href="/downloads/codefort-guard-chrome-v0.1.2.zip"
+                  download
                   className="bg-lime hover:bg-lime-muted text-bg font-extrabold text-xs py-2 px-3 text-center uppercase tracking-wider flex items-center justify-center gap-1"
                 >
                   <span>Download Chrome ZIP</span>
@@ -182,18 +181,16 @@ export default function ExtensionGuidePage() {
                 </div>
                 <div className="flex flex-col gap-2">
                   <a
-                    href="https://github.com/codefort-sec/codefort/releases/download/v0.1.2/codefort-guard-firefox-v0.1.2.xpi"
-                    target="_blank"
-                    rel="noopener noreferrer"
+                    href="/downloads/codefort-guard-firefox-v0.1.2.xpi"
+                    download
                     className="bg-lime hover:bg-lime-muted text-bg font-extrabold text-xs py-2 px-3 text-center uppercase tracking-wider flex items-center justify-center gap-1"
                   >
                     <span>Download Firefox XPI</span>
                     <span>↓</span>
                   </a>
                   <a
-                    href="https://github.com/codefort-sec/codefort/releases/download/v0.1.2/codefort-guard-firefox-v0.1.2.zip"
-                    target="_blank"
-                    rel="noopener noreferrer"
+                    href="/downloads/codefort-guard-firefox-v0.1.2.zip"
+                    download
                     className="border border-border hover:border-lime text-text hover:text-lime text-xs py-1.5 px-3 text-center uppercase tracking-wider"
                   >
                     Download Firefox ZIP (.zip)
