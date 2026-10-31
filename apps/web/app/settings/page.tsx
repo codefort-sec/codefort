@@ -9,9 +9,38 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
 
+  const [isPaired, setIsPaired] = useState(false);
+
+  // Live polling for pairing status
+  React.useEffect(() => {
+    if (!pairingToken || isPaired) return;
+    let active = true;
+
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/v1/extension/pairing-status?token=${encodeURIComponent(pairingToken)}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.paired && active) {
+            setIsPaired(true);
+            clearInterval(interval);
+          }
+        }
+      } catch (err) {
+        // Silently retry polling
+      }
+    }, 2500);
+
+    return () => {
+      active = false;
+      clearInterval(interval);
+    };
+  }, [pairingToken, isPaired]);
+
   async function handleGenerateToken() {
     setLoading(true);
     setCopied(false);
+    setIsPaired(false);
     try {
       const res = await createPairingToken();
       setPairingToken(res.pairing_token);
@@ -56,7 +85,24 @@ export default function SettingsPage() {
             <span className="text-[11px] text-lime">SINGLE_USE / 300 SECONDS</span>
           </div>
 
-          {pairingToken ? (
+          {isPaired ? (
+            <div className="p-4 border border-lime bg-lime/10 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-lime text-base font-extrabold">✓</span>
+                <div>
+                  <div className="text-xs font-extrabold text-lime uppercase tracking-wider">PAIRING COMPLETE // EXTENSION CONNECTED</div>
+                  <div className="text-[10px] text-text-muted">CodeFort Guard extension has been authenticated and linked to this workspace.</div>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={handleGenerateToken}
+                className="text-[10px] text-text border border-border hover:border-lime px-2 py-1 uppercase"
+              >
+                Pair Another ↗
+              </button>
+            </div>
+          ) : pairingToken ? (
             <div className="flex flex-col gap-2">
               <div className="flex items-center gap-2">
                 <input
@@ -73,8 +119,9 @@ export default function SettingsPage() {
                   {copied ? "COPIED ✓" : "COPY"}
                 </button>
               </div>
-              <div className="text-[10px] text-text-dim">
-                Paste this token into the CodeFort Guard extension popup to complete pairing.
+              <div className="flex items-center justify-between text-[10px] text-text-dim">
+                <span>Paste this token into the CodeFort Guard extension popup to complete pairing.</span>
+                <span className="text-lime animate-pulse">Waiting for extension...</span>
               </div>
             </div>
           ) : (
@@ -93,7 +140,7 @@ export default function SettingsPage() {
             <div className="text-[11px] font-bold text-text uppercase">Install CodeFort Guard:</div>
             <div className="flex flex-wrap gap-3">
               <a
-                href="https://github.com/codefort-sec/codefort/releases/download/v0.1.2/codefort-guard-chrome-v0.1.2.zip"
+                href="https://github.com/codefort-sec/barqai/releases/download/v0.1.2/codefort-guard-chrome-v0.1.2.zip"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="border border-border hover:border-lime text-text hover:text-lime text-xs font-mono px-3 py-2 flex items-center gap-2 transition-colors"
@@ -102,7 +149,7 @@ export default function SettingsPage() {
                 <span>↓</span>
               </a>
               <a
-                href="https://github.com/codefort-sec/codefort/releases/download/v0.1.2/codefort-guard-firefox-v0.1.2.xpi"
+                href="https://github.com/codefort-sec/barqai/releases/download/v0.1.2/codefort-guard-firefox-v0.1.2.xpi"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="border border-border hover:border-lime text-text hover:text-lime text-xs font-mono px-3 py-2 flex items-center gap-2 transition-colors"
@@ -111,12 +158,12 @@ export default function SettingsPage() {
                 <span>↓</span>
               </a>
               <a
-                href="https://github.com/codefort-sec/codefort/releases/tag/v0.1.2"
+                href="https://github.com/codefort-sec/barqai/releases"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="border border-border hover:border-text-dim text-text-dim hover:text-text text-xs font-mono px-3 py-2 flex items-center gap-2 transition-colors"
               >
-                <span>Release v0.1.2 ↗</span>
+                <span>All Releases ↗</span>
               </a>
             </div>
           </div>

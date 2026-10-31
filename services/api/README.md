@@ -27,8 +27,11 @@ cp .env.example .env
 ```
 Key settings for Barq-AI & Qwen3.8-Max:
 ```env
+LLM_PROVIDER=auto  # "auto", "qwen", "gemini", "openrouter"
+GEMINI_API_KEY=your-gemini-api-key-here
+GEMINI_MODEL=gemini-1.5-flash
 OPENROUTER_API_KEY=sk-or-v1-your-key-here
-OPENROUTER_MODEL=qwen/qwen3.8-max-0902
+OPENROUTER_MODEL=qwen/qwen-2.5-coder-32b-instruct
 OPENROUTER_REASONING=xhigh
 DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/codefort
 ```

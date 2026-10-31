@@ -1,4 +1,8 @@
-"""Barq-AI Explanation Engine: Synthesizes evidence-linked risk narratives using Qwen3.8-Max MoE with deterministic fallback."""
+"""Barq-AI Explanation Engine: Unified Multi-Provider Architecture (Gemini + Qwen/OpenRouter).
+
+Synthesizes evidence-linked risk narratives, automated git diff patches, and structured
+incident forensics using Google Gemini or Qwen (OpenRouter) with zero-downtime deterministic fallback.
+"""
 
 from __future__ import annotations
 
@@ -23,24 +27,33 @@ logger = logging.getLogger("codefort.barqai")
 
 
 class BarqAIEngine:
-    """Zero-trust AI explanation engine that links concrete evidence to security narratives using Qwen3.8-Max MoE."""
+    """Zero-trust AI explanation engine supporting unified multi-provider execution (Gemini & Qwen)."""
 
     def __init__(self):
-        self.provider = settings.LLM_PROVIDER
-        self.openrouter_api_key = settings.OPENROUTER_API_KEY or settings.LLM_API_KEY
-        self.openrouter_base_url = settings.OPENROUTER_BASE_URL
-        self.model = settings.OPENROUTER_MODEL
+        self.provider = (settings.LLM_PROVIDER or "auto").lower()
+
+        # OpenRouter / Qwen Configuration
+        self.openrouter_api_key = settings.OPENROUTER_API_KEY or (settings.LLM_API_KEY if "sk-or-" in (settings.LLM_API_KEY or "") else "")
+        self.openrouter_base_url = settings.OPENROUTER_BASE_URL.rstrip("/")
+        self.openrouter_model = settings.OPENROUTER_MODEL or "qwen/qwen-2.5-coder-32b-instruct"
+        fallback_str = getattr(settings, "OPENROUTER_FALLBACK_MODELS", "qwen/qwen-max,qwen/qwen-2.5-72b-instruct")
+        self.openrouter_fallback_models = [m.strip() for m in fallback_str.split(",") if m.strip()]
         self.reasoning = settings.OPENROUTER_REASONING
 
+        # Google Gemini Configuration
+        self.gemini_api_key = settings.GEMINI_API_KEY or (settings.LLM_API_KEY if not self.openrouter_api_key else "")
+        self.gemini_model = getattr(settings, "GEMINI_MODEL", "gemini-1.5-flash")
+
     def _get_openrouter_client(self) -> Optional[AsyncOpenAI]:
+        """Instantiates AsyncOpenAI client targeting OpenRouter if library & key are available."""
         if AsyncOpenAI is None or not self.openrouter_api_key:
             return None
         return AsyncOpenAI(
             api_key=self.openrouter_api_key,
             base_url=self.openrouter_base_url,
             default_headers={
-                "HTTP-Referer": "http://localhost:8000",
-                "X-Title": "CodeFort Barq-AI Qwen3.8-Max",
+                "HTTP-Referer": "https://codefort.sec",
+                "X-Title": "CodeFort Barq-AI Multi-Provider",
             },
         )
 
@@ -51,7 +64,7 @@ class BarqAIEngine:
         2. Fixes unclosed quote strings caused by token truncation.
         3. Repairs unbalanced braces/brackets in LIFO order.
         4. Strips trailing commas.
-        5. Falls back to regex extraction if JSON parser fails.
+        5. Falls back to regex key extraction if parser fails.
         """
         if not raw_content:
             return {}
@@ -82,7 +95,6 @@ class BarqAIEngine:
 
         # 2. Repair cut-off quote strings (token truncation repair)
         repaired = clean_text
-        # Count unescaped double quotes
         in_string = False
         escaped = False
         for char in repaired:
@@ -94,7 +106,6 @@ class BarqAIEngine:
             escaped = False
 
         if in_string:
-            # Add closing quote if truncated mid-string
             repaired += '"'
 
         # Remove trailing comma before closing tokens
@@ -141,14 +152,12 @@ class BarqAIEngine:
         if clean_patch_match:
             extracted["clean_patch"] = clean_patch_match.group(1).encode().decode("unicode_escape", "ignore")
 
-        # Extract array items for evidence_observed / risk_factors
         evidence_matches = re.findall(r'"(?:evidence_observed|risk_factors)"\s*:\s*\[(.*?)\]', clean_text, re.DOTALL)
         if evidence_matches:
             items = re.findall(r'"([^"\\]*(?:\\.[^"\\]*)*)"', evidence_matches[0])
             extracted["evidence_observed"] = [it.encode().decode("unicode_escape", "ignore") for it in items]
             extracted["risk_factors"] = list(extracted["evidence_observed"])
 
-        # Extract recommended actions
         action_matches = re.findall(r'"(?:recommended_actions)"\s*:\s*\[(.*?)\]', clean_text, re.DOTALL)
         if action_matches:
             items = re.findall(r'"([^"\\]*(?:\\.[^"\\]*)*)"', action_matches[0])
@@ -160,12 +169,22 @@ class BarqAIEngine:
 
         return extracted
 
+    def _is_valid_patch(self, patch: Optional[str]) -> bool:
+        """Validates that a string is a functional unified git diff."""
+        if not patch or not isinstance(patch, str):
+            return False
+        clean = patch.strip()
+        return ("--- " in clean and "+++ " in clean) or "@@" in clean
+
     def _synthesize_clean_patch(self, findings: List[Any], files_or_diff: Any = None) -> Optional[str]:
-        """Synthesizes an automated, 1-click clean unified git diff remediation patch."""
+        """Synthesizes an automated, 1-click clean unified git diff remediation patch.
+
+        Supports known attack benchmarks as well as dynamic hunk extraction for arbitrary repositories.
+        """
         if not findings:
             return None
 
-        # Check for preinstall / lifecycle shell droppers
+        # 1. Lifecycle preinstall / postinstall shell droppers
         has_preinstall = any("preinstall" in str(getattr(f, "rule_id", f.get("rule_id", "") if isinstance(f, dict) else "")).lower() or
                              "preinstall" in str(getattr(f, "title", f.get("title", "") if isinstance(f, dict) else "")).lower()
                              for f in findings)
@@ -180,12 +199,11 @@ class BarqAIEngine:
                 "   }"
             )
 
-        # Check for typosquatting packages
+        # 2. Typosquatting package mutations
         has_typosquat = any("typosquat" in str(getattr(f, "rule_id", f.get("rule_id", "") if isinstance(f, dict) else "")).lower() or
                             "typosquat" in str(getattr(f, "title", f.get("title", "") if isinstance(f, dict) else "")).lower()
                             for f in findings)
         if has_typosquat:
-            # Check for lodashe -> lodash, crypt0-js -> crypto-js, reqeusts -> requests
             findings_str = str(findings)
             if "lodashe" in findings_str:
                 return (
@@ -220,7 +238,7 @@ class BarqAIEngine:
                     "   }"
                 )
 
-        # Check for GitHub Actions pull_request_target checkout vulnerability
+        # 3. GitHub Actions pull_request_target checkout pwnrequest
         has_pwnrequest = any("pull_request_target" in str(getattr(f, "rule_id", f.get("rule_id", "") if isinstance(f, dict) else "")).lower() or
                              "pull_request_target" in str(getattr(f, "title", f.get("title", "") if isinstance(f, dict) else "")).lower() or
                              "pwn" in str(getattr(f, "title", f.get("title", "") if isinstance(f, dict) else "")).lower()
@@ -240,7 +258,7 @@ class BarqAIEngine:
                 "       - uses: actions/checkout@v4"
             )
 
-        # Check for base64 / obfuscated eval in source files
+        # 4. Obfuscated base64 / eval execution
         has_eval = any("eval" in str(getattr(f, "rule_id", f.get("rule_id", "") if isinstance(f, dict) else "")).lower() or
                        "obfuscation" in str(getattr(f, "rule_id", f.get("rule_id", "") if isinstance(f, dict) else "")).lower()
                        for f in findings)
@@ -254,9 +272,28 @@ class BarqAIEngine:
                 "-eval(Buffer.from('Y2hpbGRfcHJvY2Vzcy5leGVj', 'base64').toString());"
             )
 
-        # Generic safe remediation patch
+        # 5. Dynamic git diff hunk generation for arbitrary files & repos
         first_f = findings[0]
         f_file = getattr(first_f, "file_path", first_f.get("file_path", "package.json") if isinstance(first_f, dict) else "package.json") or "package.json"
+        line_start = getattr(first_f, "line_start", first_f.get("line_start", 1) if isinstance(first_f, dict) else 1) or 1
+
+        file_content: Optional[str] = None
+        if isinstance(files_or_diff, dict):
+            file_content = files_or_diff.get(f_file)
+        elif isinstance(files_or_diff, str):
+            file_content = files_or_diff
+
+        if file_content and isinstance(file_content, str):
+            lines = file_content.splitlines()
+            if 1 <= line_start <= len(lines):
+                flagged_line = lines[line_start - 1]
+                return (
+                    f"--- a/{f_file}\n"
+                    f"+++ b/{f_file}\n"
+                    f"@@ -{line_start},1 +{line_start},0 @@\n"
+                    f"-{flagged_line}\n"
+                )
+
         return (
             f"--- a/{f_file}\n"
             f"+++ b/{f_file}\n"
@@ -265,32 +302,13 @@ class BarqAIEngine:
             "+// Hardened secure configuration conforming to security baseline\n"
         )
 
-    async def generate_explanation(
+    def _build_prompt(
         self,
         files: Dict[str, str],
         findings: List[FindingResponse],
         verdict: Verdict,
-    ) -> ScanSummary:
-        """Generates a structured ScanSummary using Qwen3.8-Max MoE or zero-downtime deterministic fallback."""
-        # 1. Primary: Qwen3.8-Max Frontier MoE Model via OpenRouter
-        if self.openrouter_api_key and ("openrouter" in self.provider.lower() or "qwen" in self.provider.lower()):
-            try:
-                ai_summary = await self._call_qwen(files, findings, verdict)
-                if ai_summary:
-                    return ai_summary
-            except Exception as e:
-                logger.warning(f"BARQAI Qwen call failed, activating zero-downtime deterministic fallback: {e}")
-
-        # 2. Fail-Safe: Zero-Downtime Deterministic Fallback Synthesizer (0ms latency)
-        return self._generate_deterministic(files, findings, verdict)
-
-    async def _call_qwen(
-        self,
-        files: Dict[str, str],
-        findings: List[FindingResponse],
-        verdict: Verdict,
-    ) -> Optional[ScanSummary]:
-        """Calls Qwen3.8-Max MoE with deep reasoning and dynamic attack exemplars."""
+    ) -> str:
+        """Constructs evidence-grounded prompt enriched with few-shot exemplars."""
         findings_context = []
         findings_for_exemplars = []
         for f in findings:
@@ -305,7 +323,6 @@ class BarqAIEngine:
             findings_context.append(item)
             findings_for_exemplars.append({"title": f.title, "description": f.description or ""})
 
-        # Dynamic few-shot attack exemplar retrieval from knowledge base
         combined_diff = "\n".join(f"--- {fn}\n{c[:500]}" for fn, c in files.items())
         exemplars = retrieve_relevant_exemplars(
             diff_text=combined_diff,
@@ -315,8 +332,8 @@ class BarqAIEngine:
         )
         exemplar_prompt_section = format_exemplars_for_prompt(exemplars)
 
-        prompt = (
-            "You are BARQAI, the AI zero-trust code security auditor for CodeFort powered by Qwen3.8-Max MoE.\n"
+        return (
+            "You are Barq-AI, the zero-trust code security auditor for CodeFort.\n"
             "Analyze the pull request changes and detected security findings below.\n\n"
             f"Verdict: {verdict.value}\n"
             f"Modified Files: {list(files.keys())}\n"
@@ -329,56 +346,228 @@ class BarqAIEngine:
             '  "evidence_observed": ["Specific indicator 1", "Specific indicator 2"],\n'
             '  "why_it_matters": "Clear explanation of risk impact (e.g. runner takeover, credential leakage)",\n'
             '  "recommended_actions": ["Specific mitigation 1", "Specific mitigation 2"],\n'
-            '  "clean_patch": "Functional unified git diff resolving the vulnerability or null if benign"\n'
+            '  "clean_patch": "Functional unified git diff (--- a/... +++ b/...) resolving the vulnerability or null if benign"\n'
             "}\n"
             "2. Zero-Hallucination Evidence Grounding: Only cite concrete evidence and telemetry provided in Detected Findings. Do NOT invent fake CVEs or hallucinate file paths.\n"
             "3. 1-Click Clean Remediation: In 'clean_patch', synthesize a clean unified git diff that removes or resolves the exploit.\n"
             "4. Keep language concise, technical, and actionable."
         )
 
-        client = self._get_openrouter_client()
-        if client is None:
+    async def _call_gemini(
+        self,
+        files: Dict[str, str],
+        findings: List[FindingResponse],
+        verdict: Verdict,
+    ) -> Optional[ScanSummary]:
+        """Invokes Google Gemini API with native JSON response mode and exemplar enrichment."""
+        if not self.gemini_api_key:
             return None
 
+        prompt = self._build_prompt(files, findings, verdict)
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{self.gemini_model}:generateContent?key={self.gemini_api_key}"
+
+        payload = {
+            "contents": [
+                {
+                    "parts": [
+                        {"text": "You are Barq-AI, a zero-trust code security analysis engine. Operate with strict evidence grounding. Output valid JSON only."},
+                        {"text": prompt},
+                    ]
+                }
+            ],
+            "generationConfig": {
+                "temperature": 0.2,
+                "maxOutputTokens": 1000,
+                "responseMimeType": "application/json",
+            },
+        }
+
         try:
-            resp = await client.chat.completions.create(
-                model=self.model,
-                messages=[
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                res = await client.post(url, json=payload)
+                if res.status_code == 200:
+                    data = res.json()
+                    candidates = data.get("candidates", [])
+                    if candidates:
+                        raw_content = candidates[0].get("content", {}).get("parts", [{}])[0].get("text", "")
+                        return self._process_llm_json(raw_content, findings, files)
+                else:
+                    logger.warning(f"Gemini API returned status {res.status_code}: {res.text[:200]}")
+        except Exception as e:
+            logger.warning(f"Gemini API call failed: {e}")
+
+        return None
+
+    async def _call_qwen(
+        self,
+        files: Dict[str, str],
+        findings: List[FindingResponse],
+        verdict: Verdict,
+    ) -> Optional[ScanSummary]:
+        """Calls Qwen via OpenRouter with deep reasoning and dynamic attack exemplars.
+
+        Supports both the official AsyncOpenAI client and direct httpx HTTP execution,
+        preventing silent fallback even if openai package is uninstalled.
+        """
+        if not self.openrouter_api_key:
+            return None
+
+        prompt = self._build_prompt(files, findings, verdict)
+        models_to_try = [self.openrouter_model] + self.openrouter_fallback_models
+
+        # Attempt 1: AsyncOpenAI client (if installed and client instantiated)
+        client = self._get_openrouter_client()
+        if client is not None:
+            for model_id in models_to_try:
+                try:
+                    resp = await client.chat.completions.create(
+                        model=model_id,
+                        messages=[
+                            {
+                                "role": "system",
+                                "content": (
+                                    "You are Barq-AI, a zero-trust code security analysis engine powered by Qwen. "
+                                    "Operate with strict evidence grounding. Output valid JSON only."
+                                ),
+                            },
+                            {"role": "user", "content": prompt},
+                        ],
+                        temperature=0.2,
+                        max_tokens=950,
+                        response_format={"type": "json_object"},
+                    )
+                    raw_content = resp.choices[0].message.content
+                    summary = self._process_llm_json(raw_content, findings, files)
+                    if summary:
+                        return summary
+                except Exception as err:
+                    err_str = str(err)
+                    if "404" in err_str or "not found" in err_str.lower():
+                        logger.warning(f"OpenRouter model '{model_id}' not found, trying fallback...")
+                        continue
+                    logger.warning(f"Qwen call with '{model_id}' failed: {err}")
+                    break
+
+        # Attempt 2: Direct HTTP via httpx (guarantees API key functions even without openai library)
+        url = f"{self.openrouter_base_url}/chat/completions"
+        headers = {
+            "Authorization": f"Bearer {self.openrouter_api_key}",
+            "HTTP-Referer": "https://codefort.sec",
+            "X-Title": "CodeFort Barq-AI Qwen",
+            "Content-Type": "application/json",
+        }
+
+        for model_id in models_to_try:
+            payload = {
+                "model": model_id,
+                "messages": [
                     {
                         "role": "system",
-                        "content": (
-                            "You are Barq-AI, a zero-trust code security analysis engine powered by Qwen3.8-Max MoE. "
-                            "Operate with strict evidence grounding. Output valid JSON only."
-                        ),
+                        "content": "You are Barq-AI, a zero-trust code security analysis engine. Output valid JSON only.",
                     },
                     {"role": "user", "content": prompt},
                 ],
-                temperature=0.2,
-                max_tokens=900,
-                response_format={"type": "json_object"},
-            )
-            raw_content = resp.choices[0].message.content
-        except Exception as err:
-            logger.warning(f"Qwen3.8-Max OpenRouter direct call failed: {err}")
-            return None
+                "temperature": 0.2,
+                "max_tokens": 950,
+                "response_format": {"type": "json_object"},
+            }
 
-        if raw_content:
             try:
-                parsed = self._parse_or_repair_json(raw_content)
-                if not parsed.get("clean_patch") and findings:
-                    parsed["clean_patch"] = self._synthesize_clean_patch(findings, files)
-
-                return ScanSummary(
-                    what_changed=parsed.get("what_changed", "Code modifications analyzed."),
-                    evidence_observed=parsed.get("evidence_observed", []),
-                    why_it_matters=parsed.get("why_it_matters", "Security impact evaluated."),
-                    recommended_actions=parsed.get("recommended_actions", []),
-                    clean_patch=parsed.get("clean_patch"),
-                )
+                async with httpx.AsyncClient(timeout=12.0) as http_client:
+                    res = await http_client.post(url, headers=headers, json=payload)
+                    if res.status_code == 200:
+                        data = res.json()
+                        choices = data.get("choices", [])
+                        if choices:
+                            raw_content = choices[0].get("message", {}).get("content", "")
+                            summary = self._process_llm_json(raw_content, findings, files)
+                            if summary:
+                                return summary
+                    elif res.status_code == 404:
+                        logger.warning(f"OpenRouter model '{model_id}' returned 404, trying next fallback...")
+                        continue
+                    else:
+                        logger.warning(f"OpenRouter HTTP returned {res.status_code}: {res.text[:200]}")
+                        break
             except Exception as e:
-                logger.warning(f"Failed to parse Qwen JSON response: {e}")
+                logger.warning(f"OpenRouter HTTP direct call failed for '{model_id}': {e}")
+                break
 
         return None
+
+    def _process_llm_json(
+        self,
+        raw_content: str,
+        findings: List[FindingResponse],
+        files: Dict[str, str],
+    ) -> Optional[ScanSummary]:
+        """Repairs and converts raw LLM text into a fully validated ScanSummary."""
+        if not raw_content:
+            return None
+
+        try:
+            parsed = self._parse_or_repair_json(raw_content)
+            clean_patch = parsed.get("clean_patch")
+
+            # Validate LLM clean_patch: if LLM generated a valid unified diff, keep it!
+            if not self._is_valid_patch(clean_patch) and findings:
+                clean_patch = self._synthesize_clean_patch(findings, files)
+
+            return ScanSummary(
+                what_changed=parsed.get("what_changed", "Code modifications analyzed."),
+                evidence_observed=parsed.get("evidence_observed", []),
+                why_it_matters=parsed.get("why_it_matters", "Security impact evaluated."),
+                recommended_actions=parsed.get("recommended_actions", []),
+                clean_patch=clean_patch,
+            )
+        except Exception as e:
+            logger.warning(f"Failed to process and validate LLM JSON response: {e}")
+            return None
+
+    async def generate_explanation(
+        self,
+        files: Dict[str, str],
+        findings: List[FindingResponse],
+        verdict: Verdict,
+    ) -> ScanSummary:
+        """Unified multi-provider execution engine (Gemini & Qwen/OpenRouter with deterministic fail-safe)."""
+        provider = self.provider
+
+        # 1. Gemini Preferred
+        if provider in ("gemini",):
+            ai_summary = await self._call_gemini(files, findings, verdict)
+            if ai_summary:
+                return ai_summary
+            # Fallback to OpenRouter if configured
+            if self.openrouter_api_key:
+                ai_summary = await self._call_qwen(files, findings, verdict)
+                if ai_summary:
+                    return ai_summary
+
+        # 2. Qwen / OpenRouter Preferred
+        elif provider in ("qwen", "openrouter"):
+            ai_summary = await self._call_qwen(files, findings, verdict)
+            if ai_summary:
+                return ai_summary
+            # Fallback to Gemini if configured
+            if self.gemini_api_key:
+                ai_summary = await self._call_gemini(files, findings, verdict)
+                if ai_summary:
+                    return ai_summary
+
+        # 3. Auto-Discovery (picks available API key)
+        else:
+            if self.openrouter_api_key:
+                ai_summary = await self._call_qwen(files, findings, verdict)
+                if ai_summary:
+                    return ai_summary
+            if self.gemini_api_key:
+                ai_summary = await self._call_gemini(files, findings, verdict)
+                if ai_summary:
+                    return ai_summary
+
+        # 4. Zero-Downtime Deterministic Fallback Synthesizer (0ms latency, zero hallucination)
+        return self._generate_deterministic(files, findings, verdict)
 
     def _generate_deterministic(
         self,
@@ -455,7 +644,7 @@ class BarqAIEngine:
         workflow_findings: list,
         sandbox_telemetry: dict,
     ) -> BARQAIExplanation:
-        """Full multi-signal security correlation entrypoint for BARQAI (Qwen3.8-Max).
+        """Full multi-signal security correlation entrypoint for Barq-AI.
 
         Correlates static findings, dependency intelligence, workflow linting,
         and sandbox telemetry to synthesize an evidence-grounded incident narrative.

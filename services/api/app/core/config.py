@@ -47,12 +47,15 @@ class Settings(BaseSettings):
     GITHUB_WEBHOOK_SECRET: str = "development-webhook-secret"
     GITHUB_TOKEN: str = ""
 
-    # LLM / AI (BARQAI Engine - Powered by Qwen3.8-Max MoE)
-    LLM_PROVIDER: str = "qwen"
+    # LLM / AI Unified Multi-Provider Engine (Barq-AI: Gemini + Qwen/OpenRouter)
+    LLM_PROVIDER: str = "auto"  # "auto", "qwen", "gemini", "openrouter"
     LLM_API_KEY: str = ""
+    GEMINI_API_KEY: str = ""
+    GEMINI_MODEL: str = "gemini-1.5-flash"
     OPENROUTER_API_KEY: str = ""
     OPENROUTER_BASE_URL: str = "https://openrouter.ai/api/v1"
-    OPENROUTER_MODEL: str = "qwen/qwen3.8-max-0902"
+    OPENROUTER_MODEL: str = "qwen/qwen-2.5-coder-32b-instruct"
+    OPENROUTER_FALLBACK_MODELS: str = "qwen/qwen-max,qwen/qwen-2.5-72b-instruct"
     OPENROUTER_REASONING: str = "xhigh"
 
     # Queue & Cache
