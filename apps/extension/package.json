@@ -7,6 +7,7 @@
   "scripts": {
     "dev": "vite build --watch --mode development",
     "build": "vite build",
+    "package": "node scripts/package.js",
     "type-check": "tsc --noEmit"
   },
   "dependencies": {

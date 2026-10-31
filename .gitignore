@@ -33,4 +33,6 @@ Thumbs.db
 # Chrome Extension build output
 apps/extension/dist/
 *.zip
+*.xpi
+
 

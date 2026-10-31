@@ -17,7 +17,8 @@
 | **Web Dashboard** | [`https://codefort-web.vercel.app`](https://codefort-web.vercel.app) | Cyber Brutalist UI for PR forensics, policy toggles, & audits |
 | **Backend API** | [`https://codefort-lilac.vercel.app`](https://codefort-lilac.vercel.app) | FastAPI core, multi-engine detection, & BARQAI explainability |
 | **API Documentation** | [`https://codefort-lilac.vercel.app/docs`](https://codefort-lilac.vercel.app/docs) | Interactive Swagger UI with all schemas & OpenAPI 3.0 spec |
-| **Chrome Extension** | [`v0.1.1 Release Asset (.zip)`](https://github.com/codefort-sec/codefort/releases/tag/v0.1.1) | CodeFort Guard MV3 extension with inline PR badges & diff warnings |
+| **Chrome Extension** | [`v0.1.2 Chrome (.zip)`](https://github.com/codefort-sec/codefort/releases/tag/v0.1.2) | CodeFort Guard MV3 package for Chrome, Brave, Arc, Edge |
+| **Firefox Extension** | [`v0.1.2 Firefox (.zip / .xpi)`](https://github.com/codefort-sec/codefort/releases/tag/v0.1.2) | Mozilla AMO compliant WebExtension with Gecko ID |
 | **Malicious Test Repo** | [`codefort-sec/vulnerable-test-repo`](https://github.com/codefort-sec/vulnerable-test-repo) | Live playground with active attack PRs for judge demonstration |
 | **Clean Baseline Repo** | [`codefort-sec/clean-test-repo`](https://github.com/codefort-sec/clean-test-repo) | Compliant baseline repository demonstrating verified PASS PRs |
 | **GitHub Organization** | [`https://github.com/codefort-sec`](https://github.com/codefort-sec) | Organization holding platform monorepo and demo repositories |
@@ -119,13 +120,21 @@ Navigate directly to **[`https://codefort-web.vercel.app/dashboard`](https://cod
 - Click on **`codefort-sec/codefort`** to inspect the live scenario PR scans.
 - Click **`FORENSICS ↗`** on any PR to view the BARQAI incident explanation, coverage checklist, and remediation diff modal.
 
-### 2. Install the Chrome Extension
-1. Download **[`codefort-guard-v0.1.1.zip`](https://github.com/codefort-sec/codefort/releases/tag/v0.1.1)** from GitHub Releases.
-2. Unzip the file to extract the `dist` folder.
+### 2. Install the Browser Extension (Chrome & Firefox)
+
+#### A. Google Chrome / Chromium (Brave, Arc, Edge)
+1. Download **[`codefort-guard-chrome-v0.1.2.zip`](https://github.com/codefort-sec/codefort/releases/tag/v0.1.2)** from GitHub Releases.
+2. Unzip the archive.
 3. In Chrome, open `chrome://extensions/` and toggle **Developer mode** on (top-right).
-4. Click **Load unpacked** and select the unzipped `dist` folder.
-5. Click the CodeFort Guard icon in the browser toolbar — it comes pre-connected to the cloud API (`https://codefort-lilac.vercel.app`).
-6. Browse any pull request on `https://github.com/codefort-sec/codefort/pull/1` or `https://github.com/owner/repo/pull/42` to see the badge and inline warnings inject into the page!
+4. Click **Load unpacked** and select the unzipped directory.
+5. Browse any PR on [`codefort-sec/vulnerable-test-repo/pull/1`](https://github.com/codefort-sec/vulnerable-test-repo/pull/1) to see the badge and inline warnings!
+
+#### B. Mozilla Firefox (Free Add-on Store / Developer Mode)
+1. Download **[`codefort-guard-firefox-v0.1.2.zip`](https://github.com/codefort-sec/codefort/releases/tag/v0.1.2)** or **[`codefort-guard-firefox-v0.1.2.xpi`](https://github.com/codefort-sec/codefort/releases/tag/v0.1.2)**.
+2. In Firefox, navigate to `about:debugging#/runtime/this-firefox`.
+3. Click **Load Temporary Add-on...** and select the downloaded file (or `manifest.json` inside the extracted folder).
+4. The extension ID `codefort-guard@codefort.sec` activates instantly with all security analysis features enabled.
+5. *(Optional Store Submission)*: Ready for 1-click free publication on [addons.mozilla.org (AMO)](https://addons.mozilla.org/developers/) with 0 submission fees.
 
 ### 3. Running Locally
 
