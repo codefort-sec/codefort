@@ -7,11 +7,11 @@ import httpx
 from app.schemas.common import Severity
 from app.schemas.finding import FindingBase
 
-# High-profile popular packages commonly targeted by typosquatters
+# High-profile popular packages commonly targeted by typosquatters (>= 5 chars to prevent short-word collisions)
 POPULAR_PACKAGES = {
     "npm": [
         "express", "react", "react-dom", "lodash", "axios", "crypto-js",
-        "chalk", "moment", "commander", "webpack", "next", "vue",
+        "chalk", "moment", "commander", "webpack",
         "cross-env", "dotenv", "typescript", "debug", "tslib", "rxjs",
         "request", "requests",
     ],
@@ -19,6 +19,14 @@ POPULAR_PACKAGES = {
         "requests", "numpy", "pandas", "flask", "django", "urllib3",
         "cryptography", "boto3", "scipy", "pytest", "pydantic", "pillow",
     ],
+}
+
+# Whitelist of legitimate packages that could otherwise trigger false positives
+KNOWN_LEGITIMATE_PACKAGES = {
+    "nest", "jest", "vite", "nuxt", "koa", "pinia", "redux", "mobx",
+    "esbuild", "parcel", "rollup", "turbo", "gulp", "grunt", "zod",
+    "yup", "joi", "swr", "fastify", "supertest", "prettier", "eslint",
+    "blue", "text", "test", "vue", "next",
 }
 
 
@@ -107,16 +115,25 @@ class DependencyIntelligence:
         for name, _ver, line_no in packages:
             name_lower = name.lower()
 
-            # Exact match with official package is benign
-            if name_lower in targets:
+            # Exact match with official package or known legitimate library is benign
+            if name_lower in targets or name_lower in KNOWN_LEGITIMATE_PACKAGES:
+                continue
+
+            # Scoped packages (e.g. @types/node, @nestjs/core) are not typosquats of unqualified names
+            if name_lower.startswith("@"):
                 continue
 
             # Compare against known targets
             for target in targets:
+                if len(target) < 5:
+                    continue
+
                 dist = levenshtein_distance(name_lower, target)
-                # If distance is 1 or 2 and names are not identical
-                # (e.g., crypt0-js vs crypto-js, lod-ash vs lodash)
-                if 1 <= dist <= 2 and abs(len(name_lower) - len(target)) <= 2:
+                # Check 1 edit distance (or 2 edit distance for longer package names >= 7 chars)
+                is_typosquat = (dist == 1 and abs(len(name_lower) - len(target)) <= 1) or \
+                               (dist == 2 and len(target) >= 7 and abs(len(name_lower) - len(target)) <= 1)
+
+                if is_typosquat:
                     findings.append(
                         FindingBase(
                             rule_id=f"dep.typosquat.{target}",

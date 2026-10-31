@@ -62,6 +62,24 @@ async def test_dependency_intel_detects_typosquatting():
     assert any("lod-ash" in f.title for f in findings)
 
 
+@pytest.mark.asyncio
+async def test_dependency_intel_no_false_positives_on_benign_packages():
+    dep_intel = DependencyIntelligence()
+    benign_pkg = """{
+      "name": "enterprise-app",
+      "dependencies": {
+        "react": "^18.3.1",
+        "nest": "^10.0.0",
+        "vite": "^5.0.0",
+        "@types/react": "^18.3.0",
+        "axios": "^1.7.0"
+      }
+    }"""
+    findings = await dep_intel.scan_file("package.json", benign_pkg)
+    typosquats = [f for f in findings if "typosquat" in f.rule_id]
+    assert len(typosquats) == 0
+
+
 def test_workflow_linter_detects_script_injection():
     linter = WorkflowLinter()
     vulnerable_workflow = """name: Issue Comment Handler
