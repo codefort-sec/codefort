@@ -2,7 +2,7 @@
  * CodeFort Web Dashboard API Client
  */
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://codefort-lilac.vercel.app";
 
 export async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> {
   const url = `${API_BASE_URL}${path}`;

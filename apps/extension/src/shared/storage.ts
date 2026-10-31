@@ -5,7 +5,7 @@
 import { ExtensionConfig } from "./types";
 
 const DEFAULT_CONFIG: ExtensionConfig = {
-  apiUrl: "http://localhost:8000",
+  apiUrl: "https://codefort-lilac.vercel.app",
   token: null,
   paired: false,
 };

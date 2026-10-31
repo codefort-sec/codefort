@@ -29,6 +29,7 @@ class Settings(BaseSettings):
     ALLOWED_WEB_ORIGINS: Union[List[str], str] = [
         "http://localhost:3000",
         "http://127.0.0.1:3000",
+        "https://codefort-web.vercel.app",
     ]
 
     @field_validator("ALLOWED_WEB_ORIGINS", mode="before")
