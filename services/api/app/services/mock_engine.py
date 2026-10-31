@@ -330,13 +330,15 @@ class MockStore:
         # 1. Clean test repository scenario
         if "clean-test-repo" in repository or pr_number == 4:
             return {
-                "package.json": json.dumps({
-                    "name": "clean-telemetry-app",
-                    "version": "1.0.0",
-                    "dependencies": {
-                        "axios": "^1.7.0"
-                    }
-                }, indent=2)
+                "src/telemetry.js": """module.exports = {
+  recordEvent: (eventName, data = {}) => {
+    return {
+      timestamp: new Date().toISOString(),
+      event: eventName,
+      data,
+    };
+  },
+};"""
             }
 
         # 2. Vulnerable evaluation benchmark repository scenarios
