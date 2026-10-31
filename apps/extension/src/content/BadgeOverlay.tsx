@@ -71,7 +71,7 @@ export const BadgeOverlay: React.FC<BadgeOverlayProps> = ({
       {isOpen && (
         <div className="codefort-summary-popover" role="dialog">
           <div className="codefort-summary-header">
-            <span className="codefort-summary-title">BARQAI Security Analysis</span>
+            <span className="codefort-summary-title">Barq-AI Security Analysis</span>
             <button
               type="button"
               onClick={() => setIsOpen(false)}

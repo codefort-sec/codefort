@@ -1,4 +1,4 @@
-"""Direct CLI Runner for CodeFort BARQAI (Qwen).
+"""Direct CLI Runner for CodeFort Barq-AI (Qwen).
 
 Executes live AI security analysis on a Pull Request diff and prints the full
 verdict, composite risk score, and technical diagnosis.
@@ -52,7 +52,7 @@ index 1111111..2222222 100644
 
 
 async def main():
-    parser = argparse.ArgumentParser(description="Run BARQAI Qwen Security Model")
+    parser = argparse.ArgumentParser(description="Run Barq-AI Qwen Security Model")
     parser.add_argument("--diff", help="Path to git diff file (optional, uses sample supply-chain diff if omitted)")
     args = parser.parse_args()
 
@@ -68,7 +68,7 @@ async def main():
     settings = get_settings()
 
     print("=" * 80)
-    print("CODEFORT: RUNNING QWEN SECURITY REASONING ENGINE (BARQAI)")
+    print("CODEFORT: RUNNING QWEN SECURITY REASONING ENGINE (Barq-AI)")
     print("=" * 80)
     print(f"Target AI Model:      {settings.OPENROUTER_MODEL}")
     print(f"API Provider:         OpenRouter ({settings.OPENROUTER_BASE_URL})")
@@ -115,7 +115,7 @@ async def main():
     verdict = explanation.recommended_action.upper()
     status_label = "[BLOCKED]" if risk_score >= 70 else "[REVIEW NEEDED]" if risk_score >= 30 else "[PASSED]"
 
-    print("\n[Step 3/3] BARQAI AI Forensic Report:")
+    print("\n[Step 3/3] Barq-AI Forensic Report:")
     print("=" * 80)
     print(f"VERDICT:         {status_label} (Action: {verdict})")
     print(f"RISK SCORE:      {risk_score}/100")

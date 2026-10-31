@@ -242,7 +242,7 @@ export const App: React.FC = () => {
             <div style={{ fontSize: "20px", marginBottom: "8px" }}>🔍</div>
             <div className="card-title">No Active PR Detected</div>
             <p style={{ color: "#a2a59a", fontSize: "11px" }}>
-              Navigate to any GitHub Pull Request to view inline risk analysis and BARQAI findings.
+              Navigate to any GitHub Pull Request to view inline risk analysis and Barq-AI findings.
             </p>
           </div>
         )}

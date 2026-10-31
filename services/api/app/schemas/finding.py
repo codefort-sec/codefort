@@ -19,11 +19,13 @@ class FindingBase(BaseModel):
     confidence: Optional[float] = Field(None, ge=0.0, le=1.0, description="Confidence score")
 
 
+from datetime import datetime, timezone
+
 class FindingResponse(FindingBase):
     id: str = Field(..., description="Unique finding UUID")
     scan_id: str = Field(..., description="Associated scan ID")
     fingerprint: str = Field(..., description="Unique hash for deduplication")
-    created_at: datetime = Field(..., description="Timestamp of finding creation")
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), description="Timestamp of finding creation")
 
 
 class FindingListResponse(BaseModel):

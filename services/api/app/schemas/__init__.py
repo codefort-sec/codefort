@@ -2,7 +2,7 @@
 
 from app.schemas.common import EngineStatus, PaginatedResponse, ScanStatus, Severity, Verdict
 from app.schemas.finding import FindingBase, FindingListResponse, FindingResponse
-from app.schemas.scan import CoverageInfo, ScanCreateRequest, ScanResponse, ScanSummary
+from app.schemas.scan import CoverageInfo, ScanCreateRequest, ScanResponse, ScanSummary, BARQAIExplanation, SandboxTelemetry
 from app.schemas.extension import (
     ExtensionFindingsCount,
     ExtensionFindingsListResponse,
@@ -27,6 +27,8 @@ __all__ = [
     "FindingListResponse",
     "CoverageInfo",
     "ScanSummary",
+    "BARQAIExplanation",
+    "SandboxTelemetry",
     "ScanResponse",
     "ScanCreateRequest",
     "ExtensionFindingsCount",

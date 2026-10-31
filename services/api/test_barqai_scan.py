@@ -1,7 +1,7 @@
 """Verification test script for CodeFort Milestone 1.
 
 Verifies:
-1. Qwen3.8-Max BARQAI engine integration via OpenRouter / OpenAI SDK.
+1. Qwen3.8-Max Barq-AI engine integration via OpenRouter / OpenAI SDK.
 2. Pydantic structured output validation for BARQAIExplanation and ScanResponse.
 3. Multi-engine security correlation (Static Analysis, Dependency Intel, Workflow Linter, Sandbox Telemetry).
 4. Full FastAPI `/api/v1/demo/scan` endpoint end-to-end execution.
@@ -82,7 +82,7 @@ SAMPLE_PACKAGES = [
 
 async def run_milestone_verification():
     print("=" * 80)
-    print("CODEFORT MILESTONE 1 VERIFICATION: Qwen3.8-Max BARQAI Engine & Security Scan")
+    print("CODEFORT MILESTONE 1 VERIFICATION: Qwen3.8-Max Barq-AI Engine & Security Scan")
     print("=" * 80)
 
     settings = get_settings()
@@ -140,8 +140,8 @@ jobs:
     total_findings_count = len(static_findings) + len(dep_findings) + len(wf_findings) + len(sbx_findings)
     print(f"\n[3] Total Correlated Threat Signals: {total_findings_count}")
 
-    # Step 2: Feed into BARQAI Engine (Qwen3.8-Max / OpenAI SDK)
-    print(f"\n[4] Invoking BARQAI Engine (Qwen3.8-Max via OpenRouter / OpenAI SDK)...")
+    # Step 2: Feed into Barq-AI Engine (Qwen3.8-Max / OpenAI SDK)
+    print(f"\n[4] Invoking Barq-AI Engine (Qwen3.8-Max via OpenRouter / OpenAI SDK)...")
     explanation = await barqai_engine.analyze(
         pr_diff=SAMPLE_MALICIOUS_DIFF,
         static_findings=static_findings,

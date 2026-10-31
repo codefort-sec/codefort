@@ -121,17 +121,17 @@ export default function ScanDetailPage({ params }: { params: { id: string } }) {
         </div>
       </div>
 
-      {/* BARQAI Explanation Engine Summary */}
+      {/* Barq-AI Explanation Engine Summary */}
       {scan.summary && (
         <section className="border border-lime/40 bg-surface p-6 flex flex-col gap-5 relative">
           <div className="flex items-center justify-between border-b border-border pb-3">
             <div className="flex items-center gap-2">
               <span className="bg-lime text-bg font-extrabold text-[10px] px-2 py-0.5">AI_COPILOT</span>
               <span className="text-xs font-bold text-lime uppercase tracking-wider">
-                BARQAI Structured Explanation
+                Barq-AI Structured Explanation
               </span>
             </div>
-            <span className="text-[10px] text-text-dim">MODEL: GEMINI_BARQAI_V1</span>
+            <span className="text-[10px] text-text-dim">MODEL: QWEN3.8_MAX_MOE (Barq-AI)</span>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -162,6 +162,32 @@ export default function ScanDetailPage({ params }: { params: { id: string } }) {
                   </li>
                 ))}
               </ul>
+            </div>
+          )}
+
+          {scan.summary.clean_patch && (
+            <div className="border-t border-border/50 pt-4 flex flex-col gap-2">
+              <div className="flex items-center justify-between">
+                <div className="text-[10px] font-bold text-lime uppercase tracking-wider flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 bg-lime inline-block"></span>
+                  04. Automated 1-Click Clean Remediation Patch
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (scan.summary?.clean_patch) {
+                      navigator.clipboard.writeText(scan.summary.clean_patch);
+                      alert("Unified diff copied to clipboard!");
+                    }
+                  }}
+                  className="bg-lime text-bg text-[10px] font-extrabold px-3 py-1 uppercase tracking-wider hover:bg-lime-muted transition-colors"
+                >
+                  COPY PATCH ↗
+                </button>
+              </div>
+              <pre className="p-3 bg-bg border border-lime/30 text-[11px] font-mono text-lime-muted overflow-x-auto whitespace-pre leading-relaxed">
+                {scan.summary.clean_patch}
+              </pre>
             </div>
           )}
         </section>

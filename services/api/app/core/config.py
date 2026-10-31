@@ -47,8 +47,8 @@ class Settings(BaseSettings):
     GITHUB_WEBHOOK_SECRET: str = "development-webhook-secret"
     GITHUB_TOKEN: str = ""
 
-    # LLM / AI (BARQAI Engine)
-    LLM_PROVIDER: str = "openrouter"
+    # LLM / AI (BARQAI Engine - Powered by Qwen3.8-Max MoE)
+    LLM_PROVIDER: str = "qwen"
     LLM_API_KEY: str = ""
     OPENROUTER_API_KEY: str = ""
     OPENROUTER_BASE_URL: str = "https://openrouter.ai/api/v1"
