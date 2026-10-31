@@ -77,18 +77,20 @@ async function injectPRBadge(repo: string, pr: number, retryCount = 0, force = f
   if (!target || !target.parent) {
     if (retryCount < 24) {
       setTimeout(() => injectPRBadge(repo, pr, retryCount + 1, force), 250);
+      return;
     }
-    return;
+    console.warn("CodeFort Guard: Header anchor not found after retries, mounting fallback to body");
   }
 
   // 3. Create host container
   const container = document.createElement("span");
   container.id = BADGE_ROOT_ID;
 
-  if (target.insertBefore) {
-    target.parent.insertBefore(container, target.insertBefore);
+  const parent = target?.parent || document.body;
+  if (target?.insertBefore) {
+    parent.insertBefore(container, target.insertBefore);
   } else {
-    target.parent.appendChild(container);
+    parent.appendChild(container);
   }
 
   activeBadgeRoot = ReactDOM.createRoot(container);

@@ -89,6 +89,50 @@ export const BadgeOverlay: React.FC<BadgeOverlayProps> = ({
           <span>CODEFORT: ERROR</span>
           {onRetry && <span className="codefort-retry-action">↻ RETRY</span>}
         </button>
+        {error && !hasDismissed && typeof document !== "undefined" &&
+          createPortal(
+            <div className="codefort-floating-alert alert-blocked">
+              <div className="codefort-floating-alert-header">
+                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                  <span className="codefort-alert-icon">⚠️</span>
+                  <span className="codefort-alert-title">CODEFORT: PR SCAN NOTICE</span>
+                </div>
+                <button
+                  type="button"
+                  className="codefort-alert-close"
+                  onClick={handleDismissAlert}
+                  title="Dismiss alert"
+                >
+                  ✕
+                </button>
+              </div>
+              <div className="codefort-alert-body" style={{ color: "#ff7b72" }}>
+                {error}
+              </div>
+              <div className="codefort-alert-actions">
+                {onRetry && (
+                  <button
+                    type="button"
+                    className="codefort-alert-btn-primary"
+                    onClick={onRetry}
+                    style={{ background: "#ff7b72", color: "#000" }}
+                  >
+                    ↻ Retry Scan
+                  </button>
+                )}
+                <a
+                  href="https://codefort-web.vercel.app/settings"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="codefort-alert-btn-secondary"
+                  style={{ textDecoration: "none", textAlign: "center" }}
+                >
+                  Pair Extension ↗
+                </a>
+              </div>
+            </div>,
+            document.body
+          )}
       </div>
     );
   }

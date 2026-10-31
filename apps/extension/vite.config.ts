@@ -12,25 +12,16 @@ export default defineConfig({
       input: {
         popup: resolve(__dirname, "src/popup/index.html"),
         background: resolve(__dirname, "src/background/serviceWorker.ts"),
-        content: resolve(__dirname, "src/content/index.tsx"),
       },
       output: {
         entryFileNames: (chunkInfo) => {
           if (chunkInfo.name === "background") {
             return "background.js";
           }
-          if (chunkInfo.name === "content") {
-            return "content.js";
-          }
           return "assets/[name]-[hash].js";
         },
         chunkFileNames: "assets/[name]-[hash].js",
-        assetFileNames: (assetInfo) => {
-          if (assetInfo.name === "content.css") {
-            return "content.css";
-          }
-          return "assets/[name]-[hash].[ext]";
-        },
+        assetFileNames: "assets/[name]-[hash].[ext]",
       },
     },
   },
