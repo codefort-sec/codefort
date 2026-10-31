@@ -261,6 +261,13 @@ barqai/
 
 ---
 
+## 💡 30-Second Elevator Pitch for Judges
+
+> *"Code review is the last line of defense before poisoned code hits production, but humans miss subtle typosquats and hidden script droppers. **Barq-AI** combines frontier **Qwen3.8-Max MoE** reasoning with deterministic AST evidence to give developers an automated, zero-hallucination security analyst. It explains what changed, proves why it's dangerous with line-level evidence, and delivers an immediate 1-click remediation patch — all inside the developer's existing GitHub workflow through our browser extension, CLI scanner, and dashboard."*
+
+---
+
 ## 👥 Contributors & Hackathon Team
 - **CodeFort Security** ([@codefort-sec](https://github.com/codefort-sec))
 - Built for next-generation developer tooling & zero-trust supply chain security.
+
