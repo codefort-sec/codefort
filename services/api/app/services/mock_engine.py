@@ -398,18 +398,36 @@ jobs:
                 )
                 if res.status_code == 200:
                     gh_files = res.json()
+
+                    # Prioritize suspicious, script, executable, and config files over static media
+                    def file_priority(item: dict) -> int:
+                        fn = item.get("filename", "").lower()
+                        if fn.endswith((".jpg", ".jpeg", ".png", ".gif", ".ico", ".webp", ".svg", ".pdf")):
+                            return 3
+                        if fn.endswith((".json", ".yml", ".yaml", ".js", ".ts", ".hta", ".vbs", ".bin", ".sh", ".ps1", ".bat", ".cmd", ".exe", ".dll")) or "." not in fn.split("/")[-1]:
+                            return 0
+                        return 1
+
+                    sorted_files = sorted(gh_files, key=file_priority)
+
                     result_files = {}
-                    for item in gh_files[:8]:
+                    for item in sorted_files[:30]:
                         filename = item.get("filename", "")
-                        raw_url = item.get("raw_url", "")
                         patch = item.get("patch", "")
-                        if raw_url:
-                            raw_res = await client.get(raw_url, headers=headers)
-                            if raw_res.status_code == 200:
-                                result_files[filename] = raw_res.text
-                                continue
+                        raw_url = item.get("raw_url", "")
+
                         if patch:
                             result_files[filename] = patch
+                        elif raw_url:
+                            try:
+                                raw_res = await client.get(raw_url, headers=headers)
+                                if raw_res.status_code == 200:
+                                    # Decode first 64KB
+                                    content_text = raw_res.content[:65536].decode("utf-8", errors="replace")
+                                    result_files[filename] = content_text
+                            except Exception:
+                                pass
+
                     if result_files:
                         return result_files
         except Exception:

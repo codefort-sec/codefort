@@ -27,9 +27,68 @@ class StaticAnalyzer:
     def scan_file(self, file_path: str, content: str) -> List[FindingBase]:
         findings: List[FindingBase] = []
 
+        # 1. Detect compiled native binaries (PE Windows executable, Linux ELF, Mach-O)
+        if content.startswith("MZ") or "This program cannot be run in DOS mode" in content or content.startswith("\x7fELF"):
+            findings.append(
+                FindingBase(
+                    rule_id="binary.executable.untrusted_artifact",
+                    title=f"Untrusted compiled binary executable: {file_path}",
+                    description=(
+                        f"Detected a compiled native binary executable (Windows PE / ELF) committed as '{file_path}'. "
+                        "Software supply chain defense strictly forbids committing unvetted executable binaries directly into source repositories."
+                    ),
+                    severity=Severity.CRITICAL,
+                    file_path=file_path,
+                    line_start=1,
+                    line_end=1,
+                    recommendation="Remove unverified compiled binaries from pull requests. Build artifacts must only be generated via verifiable CI/CD.",
+                    confidence=0.99,
+                )
+            )
+            return findings
+
+        # 2. Detect scriptlet / ActiveX / Windows Script Host droppers
+        if re.search(r"ActiveXObject|<scriptlet>|WScript\.Shell|BinaryFormatter|FromBase64Transform", content, re.IGNORECASE):
+            findings.append(
+                FindingBase(
+                    rule_id="script.dropper.activex_execution",
+                    title=f"Malicious script dropper / ActiveX execution in {file_path}",
+                    description=(
+                        f"File '{file_path}' contains Windows Script Host or ActiveX automation hooks "
+                        "(ActiveXObject, WScript.Shell, scriptlet definitions, or binary deserialization). "
+                        "This is a common dropper pattern for secondary payload delivery."
+                    ),
+                    severity=Severity.CRITICAL,
+                    file_path=file_path,
+                    line_start=1,
+                    line_end=1,
+                    recommendation="Remove malicious dropper files from the pull request immediately and quarantine branch.",
+                    confidence=0.99,
+                )
+            )
+
+        # 3. Detect hidden / bypass PowerShell execution
+        if re.search(r"powershell(\.exe)?\s+(-exec\s+bypass|-ep\s+bypass|-w\s+hidden|-enc|-encodedcommand)", content, re.IGNORECASE):
+            findings.append(
+                FindingBase(
+                    rule_id="script.dropper.powershell_bypass",
+                    title=f"Obfuscated / bypass PowerShell command in {file_path}",
+                    description=f"File '{file_path}' invokes PowerShell with execution bypass or hidden window flags.",
+                    severity=Severity.CRITICAL,
+                    file_path=file_path,
+                    line_start=1,
+                    line_end=1,
+                    recommendation="Remove unauthorized PowerShell execution logic and review repository changes.",
+                    confidence=0.95,
+                )
+            )
+
+        # 4. Standard package.json lifecycle inspection
         if file_path.endswith("package.json"):
             findings.extend(self._scan_package_json(content, file_path))
-        elif file_path.endswith((".js", ".ts", ".mjs", ".cjs")):
+
+        # 5. JavaScript / TypeScript / embedded script inspection (including disguised extensions)
+        if file_path.endswith((".js", ".ts", ".mjs", ".cjs", ".hta", ".vbs")) or "<script" in content.lower():
             findings.extend(self._scan_javascript(content, file_path))
 
         return findings
