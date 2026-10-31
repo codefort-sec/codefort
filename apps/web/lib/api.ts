@@ -48,6 +48,7 @@ export interface ScanDetail {
     evidence_observed: string[];
     why_it_matters: string;
     recommended_actions?: string[];
+    clean_patch?: string | null;
   };
   created_at: string;
   completed_at?: string;

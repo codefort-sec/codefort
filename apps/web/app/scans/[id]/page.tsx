@@ -10,6 +10,7 @@ export default function ScanDetailPage({ params }: { params: { id: string } }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedFinding, setSelectedFinding] = useState<FindingItem | null>(null);
+  const [patchCopied, setPatchCopied] = useState(false);
 
   useEffect(() => {
     async function loadScanData() {
@@ -162,6 +163,35 @@ export default function ScanDetailPage({ params }: { params: { id: string } }) {
                   </li>
                 ))}
               </ul>
+            </div>
+          )}
+
+          {scan.summary.clean_patch && (
+            <div className="border-t border-border/50 pt-4 flex flex-col gap-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="bg-lime text-bg text-[10px] font-extrabold px-1.5 py-0.5">1-CLICK FIX</span>
+                  <span className="text-[10px] font-bold text-text-dim uppercase tracking-wider">
+                    Clean Remediation Patch
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (scan.summary?.clean_patch) {
+                      navigator.clipboard.writeText(scan.summary.clean_patch);
+                      setPatchCopied(true);
+                      setTimeout(() => setPatchCopied(false), 2000);
+                    }
+                  }}
+                  className="text-[10px] bg-lime hover:bg-lime-muted text-bg font-extrabold px-2.5 py-1 uppercase transition-colors"
+                >
+                  {patchCopied ? "COPIED ✓" : "COPY UNIFIED DIFF"}
+                </button>
+              </div>
+              <pre className="p-3 bg-bg border border-border text-[11px] font-mono overflow-x-auto text-emerald-400 leading-relaxed whitespace-pre select-all">
+                {scan.summary.clean_patch}
+              </pre>
             </div>
           )}
         </section>

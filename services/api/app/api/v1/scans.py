@@ -74,3 +74,96 @@ async def get_scan_telemetry(scan_id: str = Path(..., description="Scan UUID")):
         "telemetry_events": [],
         "completeness_status": "not_configured",
     }
+
+
+@router.post("/demo/scan", response_model=ScanResponse)
+async def run_demo_scan(body: ScanCreateRequest):
+    """Executes live multi-engine PR security scan with Barq-AI explanation."""
+    from datetime import datetime, timezone
+    import uuid
+    from app.engines import (
+        barqai_engine,
+        dependency_intel,
+        sandbox_runner,
+        static_analyzer,
+        workflow_linter,
+    )
+    from app.schemas.common import EngineStatus, ScanStatus, Severity, Verdict
+    from app.schemas.finding import FindingResponse
+    from app.schemas.scan import CoverageInfo, SandboxTelemetry
+
+    diff_content = body.diff or ""
+    packages = body.packages or []
+
+    # 1. Parallel threat detection
+    static_findings = await static_analyzer.analyze_diff(diff_content)
+    dep_findings = await dependency_intel.analyze_dependencies(packages)
+    workflow_findings = await workflow_linter.analyze_workflows({})
+    sandbox_data = await sandbox_runner.run_sandbox(package_json=diff_content)
+
+    all_raw_findings = static_findings + dep_findings + workflow_findings + sandbox_data.get("findings", [])
+
+    # 2. Barq-AI Multi-Provider Inference
+    explanation = await barqai_engine.analyze(
+        pr_diff=diff_content,
+        static_findings=static_findings,
+        dependency_findings=dep_findings,
+        workflow_findings=workflow_findings,
+        sandbox_telemetry=sandbox_data,
+    )
+
+    # 3. Risk scoring and verdict
+    risk_score = barqai_engine.compute_risk_score(explanation, len(all_raw_findings))
+    verdict = Verdict.BLOCKED if risk_score >= 70 else Verdict.REVIEW_REQUIRED if risk_score >= 30 else Verdict.PASS
+
+    scan_id = f"scan_{uuid.uuid4().hex[:8]}"
+    now = datetime.now(timezone.utc)
+
+    # Convert findings to FindingResponse
+    normalized_findings = []
+    for idx, f in enumerate(all_raw_findings):
+        sev_str = f.get("severity", "high").upper()
+        sev = Severity.CRITICAL if sev_str == "CRITICAL" else Severity.HIGH if sev_str == "HIGH" else Severity.MEDIUM if sev_str == "MEDIUM" else Severity.LOW
+        normalized_findings.append(
+            FindingResponse(
+                id=f"fnd_{idx:03d}",
+                scan_id=scan_id,
+                rule_id=f.get("rule_id", "sec.rule"),
+                title=f.get("title", "Threat signal detected"),
+                description=f.get("description", ""),
+                severity=sev,
+                file_path=f.get("file_path", "package.json"),
+                line_start=f.get("line_start", 1),
+                line_end=f.get("line_end", 1),
+                recommendation=f.get("recommendation", "Review and remediate."),
+                fingerprint=f"fp_{idx}",
+                created_at=now,
+            )
+        )
+
+    telemetry_obj = SandboxTelemetry(
+        spawned_processes=sandbox_data.get("spawned_processes", []),
+        network_calls=sandbox_data.get("network_calls", []),
+        file_modifications=sandbox_data.get("file_modifications", []),
+        findings=sandbox_data.get("findings", []),
+    )
+
+    return ScanResponse(
+        id=scan_id,
+        repository="codefort-sec/vulnerable-test-repo",
+        pull_request=1,
+        status=ScanStatus.COMPLETED,
+        verdict=verdict,
+        risk_score=risk_score,
+        coverage=CoverageInfo(
+            static_analysis=EngineStatus.COMPLETED,
+            dependency_intel=EngineStatus.COMPLETED,
+            workflow_linter=EngineStatus.COMPLETED,
+            dynamic_sandbox=EngineStatus.COMPLETED,
+        ),
+        summary=explanation,
+        created_at=now,
+        completed_at=now,
+        findings=normalized_findings,
+        sandbox_telemetry=telemetry_obj,
+    )
