@@ -253,6 +253,8 @@ class SandboxRunner:
         }
 
 
+from app.services.engines.patch_verifier import PatchVerifier, patch_verifier
+
 # Singleton instances
 static_analyzer = StaticAnalyzer()
 dependency_intel = DependencyIntelligence()
@@ -266,10 +268,13 @@ __all__ = [
     "sandbox_runner",
     "barqai_engine",
     "orchestrator",
+    "patch_verifier",
     "StaticAnalyzer",
     "DependencyIntelligence",
     "WorkflowLinter",
     "SandboxRunner",
     "BarqAIEngine",
     "ScanOrchestrator",
+    "PatchVerifier",
 ]
+

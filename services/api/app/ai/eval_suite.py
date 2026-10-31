@@ -25,8 +25,10 @@ from app.schemas.finding import FindingResponse
 from app.services.engines.barqai import barqai_engine
 from app.services.engines.dependency_intel import DependencyIntelligence
 from app.services.engines.osv_client import get_cached_vulnerabilities, get_vulnerabilities
+from app.services.engines.patch_verifier import patch_verifier
 from app.services.engines.static_analyzer import StaticAnalyzer
 from app.services.engines.workflow_linter import WorkflowLinter
+
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger("codefort.ai.benchmark")
@@ -172,6 +174,11 @@ async def evaluate_single_case(case: dict) -> dict:
     remediation_viable = bool(explanation.clean_patch) if case["expected_action"] == "block" else True
     evidence_grounded = bool(explanation.evidence_observed) or case["expected_action"] == "pass"
 
+    patch_verified = True
+    if explanation.clean_patch and case["expected_action"] == "block":
+        is_ver, _, _ = await patch_verifier.verify_patch(files, explanation.clean_patch, findings)
+        patch_verified = is_ver
+
     return {
         "id": case["id"],
         "name": case["name"],
@@ -184,8 +191,10 @@ async def evaluate_single_case(case: dict) -> dict:
         "duration_sec": round(duration, 3),
         "clean_patch": explanation.clean_patch,
         "remediation_viable": remediation_viable,
+        "patch_verified": patch_verified,
         "evidence_grounded": evidence_grounded,
     }
+
 
 
 async def run_20_case_osv_evaluation():
@@ -328,19 +337,24 @@ async def run_benchmark():
     viable_count = sum(1 for r in malicious_cases if r["remediation_viable"])
     remediation_viability_rate = (viable_count / len(malicious_cases) * 100) if malicious_cases else 100.0
 
+    verified_patch_count = sum(1 for r in malicious_cases if r.get("patch_verified", False))
+    patch_verification_rate = (verified_patch_count / len(malicious_cases) * 100) if malicious_cases else 100.0
+
     fp_resilient_count = sum(1 for r in benign_cases if r["actual"] == "pass")
     fp_resilience_rate = (fp_resilient_count / len(benign_cases) * 100) if benign_cases else 100.0
 
     print("\n" + "=" * 80)
-    print("4-DIMENSIONAL BENCHMARK SCORECARD SUMMARY")
+    print("STANDARDIZED BENCHMARK SCORECARD SUMMARY")
     print("=" * 80)
     print(f"1. Verdict Accuracy:           {verdict_accuracy:.1f}% ({correct_count}/{len(results)} Cases Classified Correctly)")
     print(f"2. Evidence Grounding Rate:    {evidence_grounding_rate:.1f}% (Zero Hallucinated Claims / Grounded to Telemetry)")
     print(f"3. Remediation Viability:      {remediation_viability_rate:.1f}% (Synthesized Functional Unified Git Diffs)")
-    print(f"4. False Positive Resilience:  {fp_resilience_rate:.1f}% (Benign AST/Utility Code Clean Pass Rate)")
+    print(f"4. Independent Patch Verify:   {patch_verification_rate:.1f}% (Confirmed 0 Regressions & Valid Syntax)")
+    print(f"5. False Positive Resilience:  {fp_resilience_rate:.1f}% (Benign AST/Utility Code Clean Pass Rate)")
     print("-" * 80)
     print(f"Average Evaluation Latency:    {avg_duration:.2f}s (Deterministic Fail-Safe / Sub-second Inference)")
     print("=" * 80)
+
 
     # Run the 20-case OSV evaluation suite
     await run_20_case_osv_evaluation()

@@ -15,6 +15,14 @@ from app.schemas.extension import (
 )
 from app.schemas.repository import RepositoryConnectRequest, RepositoryPolicyUpdate, RepositoryResponse
 from app.schemas.auth import AuthMeResponse, UserResponse
+from app.schemas.remediation import (
+    ApplyRemediationRequest,
+    RemediationApplyRequest,
+    RemediationApplyResponse,
+    RemediationProposal,
+    RemediationResponse,
+    RemediationVerifyRequest,
+)
 
 __all__ = [
     "ScanStatus",
@@ -44,4 +52,10 @@ __all__ = [
     "RepositoryPolicyUpdate",
     "UserResponse",
     "AuthMeResponse",
+    "RemediationProposal",
+    "RemediationResponse",
+    "RemediationVerifyRequest",
+    "RemediationApplyRequest",
+    "RemediationApplyResponse",
 ]
+

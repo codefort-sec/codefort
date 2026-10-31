@@ -95,6 +95,18 @@ class ScanOrchestrator:
         fp_str = f"{raw.file_path}:{raw.line_start}:{raw.rule_id}"
         fingerprint = hashlib.sha256(fp_str.encode()).hexdigest()
 
+        ev_id = getattr(raw, "evidence_id", None)
+        if not ev_id:
+            rule = (raw.rule_id or "").lower()
+            if "npm" in rule or "js" in rule or "static" in rule:
+                ev_id = f"STATIC-{uuid.uuid4().hex[:4].upper()}"
+            elif "dep" in rule or "cve" in rule or "osv" in rule:
+                ev_id = f"DEP-{uuid.uuid4().hex[:4].upper()}"
+            elif "gha" in rule or "workflow" in rule:
+                ev_id = f"WORKFLOW-{uuid.uuid4().hex[:4].upper()}"
+            else:
+                ev_id = f"EVID-{uuid.uuid4().hex[:4].upper()}"
+
         return FindingResponse(
             id=f_id,
             scan_id=scan_id,
@@ -106,10 +118,12 @@ class ScanOrchestrator:
             file_path=raw.file_path,
             line_start=raw.line_start,
             line_end=raw.line_end,
+            evidence_id=ev_id,
             recommendation=raw.recommendation,
             fingerprint=fingerprint,
             created_at=datetime.now(timezone.utc),
         )
+
 
     def _generate_barqai_summary(
         self,
