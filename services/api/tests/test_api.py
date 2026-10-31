@@ -139,6 +139,21 @@ async def test_scan_endpoints(client: AsyncClient):
 
 
 @pytest.mark.asyncio
+async def test_trigger_scan_dynamic_execution(client: AsyncClient):
+    resp = await client.post(
+        "/api/v1/repositories/codefort-sec/vulnerable-test-repo/pull-requests/1/scans",
+        json={},
+    )
+    assert resp.status_code == 202
+    data = resp.json()
+    assert data["status"] == "completed"
+    assert data["verdict"] == "BLOCKED"
+    assert data["risk_score"] is not None and data["risk_score"] >= 70
+    assert data["summary"] is not None
+
+
+
+@pytest.mark.asyncio
 async def test_github_webhook_hmac_and_dedup(client: AsyncClient):
     payload = b'{"action":"opened","pull_request":{"number":100,"head":{"sha":"fedcba"}},"repository":{"full_name":"owner/repo"}}'
     secret = settings.GITHUB_WEBHOOK_SECRET

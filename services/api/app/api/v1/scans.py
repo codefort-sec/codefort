@@ -28,7 +28,7 @@ async def queue_pr_scan(
         scan = await mock_store.scan_files(repository=repository, pr_number=pr_number, files=body.files)
         return scan
     head_sha = body.head_sha if body else None
-    scan = mock_store.trigger_scan(repository=repository, pr_number=pr_number, head_sha=head_sha)
+    scan = await mock_store.trigger_scan(repository=repository, pr_number=pr_number, head_sha=head_sha)
     return scan
 
 

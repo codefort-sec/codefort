@@ -63,7 +63,7 @@ async def github_webhook(
         head_sha = pr.get("head", {}).get("sha")
 
         if repo and pr_number:
-            scan = mock_store.trigger_scan(repository=repo, pr_number=pr_number, head_sha=head_sha)
+            scan = await mock_store.trigger_scan(repository=repo, pr_number=pr_number, head_sha=head_sha)
             return {
                 "status": "queued",
                 "delivery_id": x_github_delivery,

@@ -75,3 +75,18 @@ export async function createPairingToken(): Promise<{ pairing_token: string; exp
     method: "POST",
   });
 }
+
+export async function triggerPRScan(repoFullName: string, prNumber: number): Promise<ScanDetail> {
+  const parts = repoFullName.split("/");
+  const owner = parts[0] || repoFullName;
+  const repo = parts[1] || "";
+  return apiFetch<ScanDetail>(
+    `/api/v1/repositories/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/pull-requests/${prNumber}/scans`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({}),
+    }
+  );
+}
+

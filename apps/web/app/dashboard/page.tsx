@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { apiFetch } from "@/lib/api";
+import { apiFetch, triggerPRScan } from "@/lib/api";
 
 interface RepoItem {
   id: string;
@@ -31,6 +31,7 @@ export default function DashboardPage() {
   const [selectedRepo, setSelectedRepo] = useState<string>("codefort-sec/codefort");
   const [prs, setPrs] = useState<PRItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [scanningPRs, setScanningPRs] = useState<Record<number, boolean>>({});
 
   // Connect Repository Modal State
   const [showConnectModal, setShowConnectModal] = useState(false);
@@ -66,16 +67,22 @@ export default function DashboardPage() {
       setPrs([]);
       return;
     }
+    let isMounted = true;
     async function loadPrs() {
       try {
         const prList = await apiFetch<PRItem[]>(`/api/v1/repositories/${selectedRepo}/pull-requests`);
-        setPrs(prList);
+        if (isMounted) setPrs(prList);
       } catch (err) {
         console.error(`Failed to load PRs for ${selectedRepo}:`, err);
-        setPrs([]);
+        if (isMounted) setPrs([]);
       }
     }
     loadPrs();
+    const interval = setInterval(loadPrs, 10000);
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
   }, [selectedRepo]);
 
   async function handleDisconnectRepo(repoId: string, repoFullName: string, e: React.MouseEvent) {
@@ -113,6 +120,20 @@ export default function DashboardPage() {
       console.error("Failed to load demo repo:", err);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleTriggerScan(prNumber: number) {
+    if (!selectedRepo) return;
+    setScanningPRs((prev) => ({ ...prev, [prNumber]: true }));
+    try {
+      await triggerPRScan(selectedRepo, prNumber);
+      const prList = await apiFetch<PRItem[]>(`/api/v1/repositories/${selectedRepo}/pull-requests`);
+      setPrs(prList);
+    } catch (err: any) {
+      console.error(`Failed to trigger scan for ${selectedRepo}#${prNumber}:`, err);
+    } finally {
+      setScanningPRs((prev) => ({ ...prev, [prNumber]: false }));
     }
   }
 
@@ -348,7 +369,11 @@ export default function DashboardPage() {
                       <td className="py-3 px-4 font-medium text-text max-w-xs truncate">{pr.title}</td>
                       <td className="py-3 px-4 text-text-muted">@{pr.author_login}</td>
                       <td className="py-3 px-4">
-                        {scan ? (
+                        {scanningPRs[pr.pull_request_number] ? (
+                          <span className="px-2 py-0.5 text-[10px] font-bold border rounded-none bg-lime/10 border-lime text-lime animate-pulse">
+                            ANALYZING...
+                          </span>
+                        ) : scan ? (
                           <span
                             className={`px-2 py-0.5 text-[10px] font-bold border rounded-none ${
                               isBlocked
@@ -365,28 +390,45 @@ export default function DashboardPage() {
                         )}
                       </td>
                       <td className="py-3 px-4 font-bold">
-                        {scan?.risk_score !== undefined ? (
+                        {scanningPRs[pr.pull_request_number] ? (
+                          <span className="text-lime animate-pulse text-[11px]">CALCULATING...</span>
+                        ) : scan?.risk_score !== undefined ? (
                           <span className="text-lime">{scan.risk_score} / 100</span>
                         ) : (
                           "—"
                         )}
                       </td>
                       <td className="py-3 px-4 text-right">
-                        {scan ? (
-                          <Link
-                            href={`/scans/${scan.id}`}
-                            className="bg-lime hover:bg-lime-muted text-bg font-extrabold text-[10px] px-3 py-1 uppercase"
-                          >
-                            FORENSICS ↗
-                          </Link>
-                        ) : (
-                          <button
-                            type="button"
-                            className="border border-border text-text text-[10px] px-2 py-1"
-                          >
-                            TRIGGER SCAN
-                          </button>
-                        )}
+                        <div className="flex items-center justify-end gap-2">
+                          {scan ? (
+                            <>
+                              <Link
+                                href={`/scans/${scan.id}`}
+                                className="bg-lime hover:bg-lime-muted text-bg font-extrabold text-[10px] px-3 py-1 uppercase tracking-wider"
+                              >
+                                FORENSICS ↗
+                              </Link>
+                              <button
+                                type="button"
+                                onClick={() => handleTriggerScan(pr.pull_request_number)}
+                                disabled={scanningPRs[pr.pull_request_number]}
+                                title="Re-run security scan"
+                                className="border border-border hover:border-lime text-text text-[10px] px-2 py-1 transition-colors disabled:opacity-50"
+                              >
+                                {scanningPRs[pr.pull_request_number] ? "..." : "↻"}
+                              </button>
+                            </>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => handleTriggerScan(pr.pull_request_number)}
+                              disabled={scanningPRs[pr.pull_request_number]}
+                              className="border border-lime text-lime hover:bg-lime hover:text-bg font-bold text-[10px] px-3 py-1 uppercase tracking-wider transition-colors disabled:opacity-50"
+                            >
+                              {scanningPRs[pr.pull_request_number] ? "SCANNING..." : "⚡ TRIGGER SCAN"}
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   );

