@@ -1,9 +1,9 @@
-"""Scan Pipeline Orchestrator & BARQAI Structured Explanation Engine."""
+from __future__ import annotations
 
 import hashlib
 import uuid
 from datetime import datetime, timezone
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 from app.schemas.common import EngineStatus, ScanStatus, Severity, Verdict
 from app.schemas.finding import FindingBase, FindingResponse
 from app.schemas.scan import CoverageInfo, ScanResponse, ScanSummary
@@ -11,6 +11,8 @@ from app.services.engines.dependency_intel import DependencyIntelligence
 from app.services.engines.static_analyzer import StaticAnalyzer
 from app.services.engines.workflow_linter import WorkflowLinter
 from app.services.policy import evaluate_policy
+
+Tuple_Scan_Findings = Tuple[ScanResponse, List[FindingResponse]]
 
 
 class ScanOrchestrator:
@@ -151,5 +153,4 @@ class ScanOrchestrator:
         )
 
 
-Tuple_Scan_Findings = tuple[ScanResponse, List[FindingResponse]]
 orchestrator = ScanOrchestrator()
