@@ -45,6 +45,7 @@ class Settings(BaseSettings):
     GITHUB_APP_ID: str = ""
     GITHUB_APP_PRIVATE_KEY: str = ""
     GITHUB_WEBHOOK_SECRET: str = "development-webhook-secret"
+    GITHUB_TOKEN: str = ""
 
     # LLM / AI (BARQAI Engine)
     LLM_PROVIDER: str = "gemini"

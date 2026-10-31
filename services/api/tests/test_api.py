@@ -200,3 +200,30 @@ async def test_github_webhook_hmac_and_dedup(client: AsyncClient):
     )
     assert resp_bad_sig.status_code == 403
     assert resp_bad_sig.json()["error"]["code"] == "INVALID_SIGNATURE"
+
+
+@pytest.mark.asyncio
+async def test_list_pull_requests_benchmark_and_fixtures(client: AsyncClient):
+    # 1. Vulnerable benchmark repo has 3 PRs
+    resp1 = await client.get("/api/v1/repositories/codefort-sec/vulnerable-test-repo/pull-requests")
+    assert resp1.status_code == 200
+    prs1 = resp1.json()
+    assert len(prs1) == 3
+    assert prs1[0]["pull_request_number"] == 1
+    assert prs1[1]["pull_request_number"] == 2
+    assert prs1[2]["pull_request_number"] == 3
+
+    # 2. Clean benchmark repo has 1 PR
+    resp2 = await client.get("/api/v1/repositories/codefort-sec/clean-test-repo/pull-requests")
+    assert resp2.status_code == 200
+    prs2 = resp2.json()
+    assert len(prs2) == 1
+    assert prs2[0]["pull_request_number"] == 1
+
+    # 3. Test fixture owner/repo
+    resp3 = await client.get("/api/v1/repositories/owner/repo/pull-requests")
+    assert resp3.status_code == 200
+    prs3 = resp3.json()
+    assert len(prs3) >= 1
+    assert any(p["pull_request_number"] == 42 for p in prs3)
+

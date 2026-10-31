@@ -55,10 +55,7 @@ async def get_pr_status(
     """Provides compact PR security status for the Chrome Extension badge."""
     scan = mock_store.get_latest_scan_for_pr(repo, pr)
     if not scan:
-        raise NotFoundException(
-            message=f"No scan found for pull request {repo}#{pr}",
-            code="SCAN_NOT_FOUND",
-        )
+        scan = await mock_store.trigger_scan(repo, pr)
 
     findings = mock_store.get_findings(scan.id)
     counts = ExtensionFindingsCount()
@@ -94,10 +91,7 @@ async def get_pr_findings(
     """Returns line-level security findings for inline DOM injection."""
     scan = mock_store.get_latest_scan_for_pr(repo, pr)
     if not scan:
-        raise NotFoundException(
-            message=f"No scan found for pull request {repo}#{pr}",
-            code="SCAN_NOT_FOUND",
-        )
+        scan = await mock_store.trigger_scan(repo, pr)
 
     findings = mock_store.get_findings(scan.id)
     line_findings: List[ExtensionLineFinding] = []
@@ -131,10 +125,7 @@ async def get_pr_summary(
     """Returns BARQAI summary and top evidence for the extension side panel."""
     scan = mock_store.get_latest_scan_for_pr(repo, pr)
     if not scan:
-        raise NotFoundException(
-            message=f"No scan found for pull request {repo}#{pr}",
-            code="SCAN_NOT_FOUND",
-        )
+        scan = await mock_store.trigger_scan(repo, pr)
 
     return ExtensionSummaryResponse(
         repository=scan.repository,

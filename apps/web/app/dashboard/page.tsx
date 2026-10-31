@@ -28,7 +28,7 @@ interface PRItem {
 
 export default function DashboardPage() {
   const [repos, setRepos] = useState<RepoItem[]>([]);
-  const [selectedRepo, setSelectedRepo] = useState<string>("codefort-sec/codefort");
+  const [selectedRepo, setSelectedRepo] = useState<string>("codefort-sec/vulnerable-test-repo");
   const [prs, setPrs] = useState<PRItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [scanningPRs, setScanningPRs] = useState<Record<number, boolean>>({});

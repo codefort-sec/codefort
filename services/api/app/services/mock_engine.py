@@ -327,8 +327,20 @@ class MockStore:
         import json
         import httpx
 
-        # 1. Known attack demo scenarios
-        if "vulnerable-test-repo" in repository or "codefort" in repository:
+        # 1. Clean test repository scenario
+        if "clean-test-repo" in repository or pr_number == 4:
+            return {
+                "package.json": json.dumps({
+                    "name": "clean-telemetry-app",
+                    "version": "1.0.0",
+                    "dependencies": {
+                        "axios": "^1.7.0"
+                    }
+                }, indent=2)
+            }
+
+        # 2. Vulnerable evaluation benchmark repository scenarios
+        if "vulnerable-test-repo" in repository:
             if pr_number == 1:
                 return {
                     "package.json": json.dumps({
@@ -368,21 +380,16 @@ jobs:
 """
                 }
 
-        if "clean-test-repo" in repository or pr_number == 4:
-            return {
-                "package.json": json.dumps({
-                    "name": "clean-telemetry-app",
-                    "version": "1.0.0",
-                    "dependencies": {
-                        "axios": "^1.7.0"
-                    }
-                }, indent=2)
-            }
-
-        # 2. For external GitHub repositories, attempt to fetch live PR files from GitHub API
+        # 3. For external GitHub repositories, attempt to fetch live PR files from GitHub API
         try:
-            async with httpx.AsyncClient(timeout=4.0) as client:
-                headers = {"Accept": "application/vnd.github.v3+json", "User-Agent": "CodeFort-Scanner"}
+            import os
+            from app.core.config import settings
+            token = getattr(settings, "GITHUB_TOKEN", None) or os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN")
+            headers = {"Accept": "application/vnd.github.v3+json", "User-Agent": "CodeFort-Scanner"}
+            if token:
+                headers["Authorization"] = f"token {token}"
+
+            async with httpx.AsyncClient(timeout=5.0) as client:
                 res = await client.get(
                     f"https://api.github.com/repos/{repository}/pulls/{pr_number}/files",
                     headers=headers,
@@ -390,7 +397,7 @@ jobs:
                 if res.status_code == 200:
                     gh_files = res.json()
                     result_files = {}
-                    for item in gh_files[:5]:
+                    for item in gh_files[:8]:
                         filename = item.get("filename", "")
                         raw_url = item.get("raw_url", "")
                         patch = item.get("patch", "")
