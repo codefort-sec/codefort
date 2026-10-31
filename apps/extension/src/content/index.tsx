@@ -138,16 +138,33 @@ async function injectLineWarnings(repo: string, pr: number) {
 
           const cell = document.createElement("td");
           cell.colSpan = 10;
-          cell.innerHTML = `
-            <div class="codefort-diff-warning-box">
-              <span class="codefort-diff-warning-tag">${finding.severity}</span>
-              <div class="codefort-diff-warning-content">
-                <div class="codefort-diff-warning-title">🛡 ${finding.title} (${finding.rule_id})</div>
-                ${finding.recommendation ? `<div class="codefort-diff-warning-recom">${finding.recommendation}</div>` : ""}
-              </div>
-            </div>
-          `;
+
+          const box = document.createElement("div");
+          box.className = "codefort-diff-warning-box";
+
+          const tag = document.createElement("span");
+          tag.className = "codefort-diff-warning-tag";
+          tag.textContent = finding.severity;
+          box.appendChild(tag);
+
+          const contentDiv = document.createElement("div");
+          contentDiv.className = "codefort-diff-warning-content";
+
+          const titleDiv = document.createElement("div");
+          titleDiv.className = "codefort-diff-warning-title";
+          titleDiv.textContent = `🛡 ${finding.title} (${finding.rule_id})`;
+          contentDiv.appendChild(titleDiv);
+
+          if (finding.recommendation) {
+            const recomDiv = document.createElement("div");
+            recomDiv.className = "codefort-diff-warning-recom";
+            recomDiv.textContent = finding.recommendation;
+            contentDiv.appendChild(recomDiv);
+          }
+
+          box.appendChild(contentDiv);
           warningRow.appendChild(cell);
+          cell.appendChild(box);
           row.after(warningRow);
         }
       });
