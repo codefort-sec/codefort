@@ -95,6 +95,28 @@ async def test_extension_summary(client: AsyncClient):
 
 
 @pytest.mark.asyncio
+async def test_extension_remediation_and_apply(client: AsyncClient):
+    # 1. Fetch remediation via extension endpoint
+    resp_rem = await client.get("/api/v1/extension/remediation?repo=owner/repo&pr=42")
+    assert resp_rem.status_code == 200
+    rem_data = resp_rem.json()
+    assert rem_data["overall_verification_status"] == "verified"
+    assert rem_data["clean_patch"] is not None
+    assert len(rem_data["proposals"]) >= 1
+    proposal = rem_data["proposals"][0]
+    assert proposal["verification_status"] == "verified"
+    assert proposal["original_code"] != ""
+    assert proposal["suggested_code"] is not None
+
+    # 2. Apply remediation via extension endpoint
+    resp_apply = await client.post("/api/v1/extension/remediation/apply?repo=owner/repo&pr=42")
+    assert resp_apply.status_code == 200
+    apply_data = resp_apply.json()
+    assert apply_data["status"] == "applied"
+    assert apply_data["diff_applied"] == rem_data["clean_patch"]
+
+
+@pytest.mark.asyncio
 async def test_extension_pairing_flow(client: AsyncClient):
     # 1. Create token
     resp1 = await client.post("/api/v1/extension/pairing-tokens")

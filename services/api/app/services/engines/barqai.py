@@ -464,13 +464,15 @@ class BarqAIEngine:
         findings: List[FindingResponse],
         verdict: Verdict,
         osv_evidence: Optional[List[Dict[str, Any]]] = None,
+        model: Optional[str] = None,
     ) -> Optional[ScanSummary]:
         """Invokes Google Gemini API with native JSON response mode and exemplar enrichment."""
         if not self.gemini_api_key:
             return None
 
         prompt = self._build_prompt(files, findings, verdict, osv_evidence=osv_evidence)
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/{self.gemini_model}:generateContent?key={self.gemini_api_key}"
+        model_name = model or self.gemini_model
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={self.gemini_api_key}"
 
         payload = {
             "contents": [
@@ -510,13 +512,14 @@ class BarqAIEngine:
         findings: List[FindingResponse],
         verdict: Verdict,
         osv_evidence: Optional[List[Dict[str, Any]]] = None,
+        model: Optional[str] = None,
     ) -> Optional[ScanSummary]:
         """Calls Qwen via OpenRouter with deep reasoning, dynamic attack exemplars, and OSV evidence."""
         if not self.openrouter_api_key:
             return None
 
         prompt = self._build_prompt(files, findings, verdict, osv_evidence=osv_evidence)
-        models_to_try = [self.openrouter_model] + self.openrouter_fallback_models
+        models_to_try = [model] if model else ([self.openrouter_model] + self.openrouter_fallback_models)
 
         # Attempt 1: AsyncOpenAI client (if installed and client instantiated)
         client = self._get_openrouter_client()
@@ -778,43 +781,48 @@ class BarqAIEngine:
         findings: List[FindingResponse],
         verdict: Verdict,
         osv_evidence: Optional[List[Dict[str, Any]]] = None,
+        provider: Optional[str] = None,
+        model: Optional[str] = None,
     ) -> ScanSummary:
         """Unified multi-provider execution engine (Gemini & Qwen/OpenRouter with deterministic fail-safe)."""
-        provider = self.provider
+        selected_provider = (provider or self.provider).lower()
 
         if osv_evidence is None:
             osv_evidence = self._extract_osv_evidence(files, findings)
 
+        if selected_provider == "deterministic":
+            return self._generate_deterministic(files, findings, verdict, osv_evidence=osv_evidence)
+
         # 1. Gemini Preferred
-        if provider in ("gemini",):
-            ai_summary = await self._call_gemini(files, findings, verdict, osv_evidence=osv_evidence)
+        if selected_provider in ("gemini",):
+            ai_summary = await self._call_gemini(files, findings, verdict, osv_evidence=osv_evidence, model=model)
             if ai_summary:
                 return ai_summary
             # Fallback to OpenRouter if configured
             if self.openrouter_api_key:
-                ai_summary = await self._call_qwen(files, findings, verdict, osv_evidence=osv_evidence)
+                ai_summary = await self._call_qwen(files, findings, verdict, osv_evidence=osv_evidence, model=model)
                 if ai_summary:
                     return ai_summary
 
         # 2. Qwen / OpenRouter Preferred
-        elif provider in ("qwen", "openrouter"):
-            ai_summary = await self._call_qwen(files, findings, verdict, osv_evidence=osv_evidence)
+        elif selected_provider in ("qwen", "openrouter"):
+            ai_summary = await self._call_qwen(files, findings, verdict, osv_evidence=osv_evidence, model=model)
             if ai_summary:
                 return ai_summary
             # Fallback to Gemini if configured
             if self.gemini_api_key:
-                ai_summary = await self._call_gemini(files, findings, verdict, osv_evidence=osv_evidence)
+                ai_summary = await self._call_gemini(files, findings, verdict, osv_evidence=osv_evidence, model=model)
                 if ai_summary:
                     return ai_summary
 
         # 3. Auto-Discovery (picks available API key)
         else:
             if self.openrouter_api_key:
-                ai_summary = await self._call_qwen(files, findings, verdict, osv_evidence=osv_evidence)
+                ai_summary = await self._call_qwen(files, findings, verdict, osv_evidence=osv_evidence, model=model)
                 if ai_summary:
                     return ai_summary
             if self.gemini_api_key:
-                ai_summary = await self._call_gemini(files, findings, verdict, osv_evidence=osv_evidence)
+                ai_summary = await self._call_gemini(files, findings, verdict, osv_evidence=osv_evidence, model=model)
                 if ai_summary:
                     return ai_summary
 

@@ -6,6 +6,7 @@ import { getStoredConfig, setStoredConfig } from "./storage";
 import {
   ExtensionFindingsResponse,
   ExtensionPRStatusResponse,
+  ExtensionRemediationResponse,
   ExtensionSummaryResponse,
 } from "./types";
 
@@ -56,6 +57,22 @@ export async function fetchPRFindings(repo: string, pr: number): Promise<Extensi
 export async function fetchPRSummary(repo: string, pr: number): Promise<ExtensionSummaryResponse> {
   return request<ExtensionSummaryResponse>(
     `/api/v1/extension/summary?repo=${encodeURIComponent(repo)}&pr=${pr}`
+  );
+}
+
+export async function fetchPRRemediation(repo: string, pr: number): Promise<ExtensionRemediationResponse> {
+  return request<ExtensionRemediationResponse>(
+    `/api/v1/extension/remediation?repo=${encodeURIComponent(repo)}&pr=${pr}`
+  );
+}
+
+export async function applyPRRemediation(repo: string, pr: number): Promise<{ status: string; message: string }> {
+  return request<{ status: string; message: string }>(
+    `/api/v1/extension/remediation/apply?repo=${encodeURIComponent(repo)}&pr=${pr}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+    }
   );
 }
 

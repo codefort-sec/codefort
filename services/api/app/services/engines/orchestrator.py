@@ -17,10 +17,11 @@ Tuple_Scan_Findings = Tuple[ScanResponse, List[FindingResponse]]
 
 
 class ScanOrchestrator:
-    def __init__(self):
+    def __init__(self, ai_engine=None):
         self.static_analyzer = StaticAnalyzer()
         self.dependency_intel = DependencyIntelligence()
         self.workflow_linter = WorkflowLinter()
+        self.barqai_engine = ai_engine or barqai_engine
 
     async def execute_scan(
         self,
@@ -28,6 +29,8 @@ class ScanOrchestrator:
         pull_request: int,
         files: Dict[str, str],
         scan_id: Optional[str] = None,
+        ai_provider: Optional[str] = None,
+        ai_model: Optional[str] = None,
     ) -> Tuple_Scan_Findings:
         scan_id = scan_id or f"scan_{uuid.uuid4().hex[:8]}"
         created_at = datetime.now(timezone.utc)
@@ -71,7 +74,9 @@ class ScanOrchestrator:
         verdict, risk_score = evaluate_policy(all_findings, coverage)
 
         # 3. Generate BARQAI structured explanation
-        summary = await barqai_engine.generate_explanation(files, all_findings, verdict)
+        summary = await self.barqai_engine.generate_explanation(
+            files, all_findings, verdict, provider=ai_provider, model=ai_model
+        )
 
         completed_at = datetime.now(timezone.utc)
 

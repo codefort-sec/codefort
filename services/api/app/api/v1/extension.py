@@ -15,6 +15,7 @@ from app.schemas.extension import (
     ExtensionSummaryResponse,
     PairingTokenResponse,
 )
+from app.schemas.remediation import RemediationApplyResponse, RemediationResponse
 from app.services.mock_engine import mock_store
 
 from datetime import datetime, timezone
@@ -89,6 +90,7 @@ async def get_pr_status(
     return ExtensionPRStatusResponse(
         repository=scan.repository,
         pull_request=scan.pull_request,
+        scan_id=scan.id,
         status=scan.status,
         verdict=scan.verdict,
         risk_score=scan.risk_score,
@@ -145,7 +147,38 @@ async def get_pr_summary(
     return ExtensionSummaryResponse(
         repository=scan.repository,
         pull_request=scan.pull_request,
+        scan_id=scan.id,
         verdict=scan.verdict,
         risk_score=scan.risk_score,
         summary=scan.summary,
     )
+
+
+@router.get("/remediation", response_model=RemediationResponse)
+async def get_extension_remediation(
+    repo: str = Query(..., description="Repository owner/name"),
+    pr: int = Query(..., description="Pull request number", ge=1),
+):
+    """Returns intelligent remediation proposals and clean unified patch for PR."""
+    from app.api.v1.remediation import get_remediation_patch
+
+    scan = mock_store.get_latest_scan_for_pr(repo, pr)
+    if not scan:
+        scan = await mock_store.trigger_scan(repo, pr)
+
+    return await get_remediation_patch(scan.id)
+
+
+@router.post("/remediation/apply", response_model=RemediationApplyResponse)
+async def apply_extension_remediation(
+    repo: str = Query(..., description="Repository owner/name"),
+    pr: int = Query(..., description="Pull request number", ge=1),
+):
+    """Applies verified remediation patch for PR directly from extension."""
+    from app.api.v1.remediation import apply_remediation_patch
+
+    scan = mock_store.get_latest_scan_for_pr(repo, pr)
+    if not scan:
+        scan = await mock_store.trigger_scan(repo, pr)
+
+    return await apply_remediation_patch(scan.id)

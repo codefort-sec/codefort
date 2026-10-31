@@ -91,3 +91,66 @@ export async function triggerPRScan(repoFullName: string, prNumber: number): Pro
   );
 }
 
+export interface RemediationProposal {
+  finding_id: string;
+  rule_id: string;
+  title: string;
+  file_path: string;
+  line_start: number;
+  original_code: string;
+  suggested_code: string;
+  unified_diff: string;
+  explanation: string;
+  verification_status: "verified" | "failed" | "unverified";
+}
+
+export interface RemediationResponse {
+  scan_id: string;
+  repository: string;
+  pull_request: number;
+  clean_patch?: string | null;
+  proposals: RemediationProposal[];
+  overall_verification_status: "verified" | "failed" | "review_required";
+  can_auto_apply: boolean;
+}
+
+export interface RemediationApplyResponse {
+  status: string;
+  scan_id: string;
+  message: string;
+  diff_applied?: string;
+}
+
+export async function getRemediationPatch(scanId: string): Promise<RemediationResponse> {
+  return apiFetch<RemediationResponse>(`/api/v1/remediation/${scanId}/patch`);
+}
+
+export async function verifyRemediationPatch(
+  scanId: string,
+  patch?: string
+): Promise<{
+  scan_id: string;
+  is_verified: boolean;
+  verification_status: string;
+  message: string;
+  remaining_findings_count: number;
+  regressions_detected: number;
+}> {
+  return apiFetch(`/api/v1/remediation/${scanId}/verify`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(patch ? { patch } : {}),
+  });
+}
+
+export async function applyRemediationPatch(
+  scanId: string,
+  commitMessage?: string
+): Promise<RemediationApplyResponse> {
+  return apiFetch<RemediationApplyResponse>(`/api/v1/remediation/${scanId}/apply`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(commitMessage ? { commit_message: commitMessage } : {}),
+  });
+}
+

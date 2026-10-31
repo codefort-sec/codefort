@@ -3,7 +3,14 @@
  * Powered by Barq-AI
  */
 
-import { fetchPRFindings, fetchPRStatus, fetchPRSummary, pairWithToken } from "../shared/api";
+import {
+  applyPRRemediation,
+  fetchPRFindings,
+  fetchPRRemediation,
+  fetchPRStatus,
+  fetchPRSummary,
+  pairWithToken,
+} from "../shared/api";
 import { getStoredConfig } from "../shared/storage";
 import { ExtensionMessage, ExtensionResponse } from "../shared/types";
 
@@ -213,6 +220,27 @@ async function handleMessage(
       }
       const data = await fetchPRSummary(message.repo, message.pr);
       setCache(cacheKey, data);
+      return { success: true, data };
+    }
+
+    case "GET_PR_REMEDIATION": {
+      const cacheKey = `remediation:${message.repo}:${message.pr}`;
+      const cached = getCached(cacheKey);
+      if (cached) {
+        return { success: true, data: cached };
+      }
+      const data = await fetchPRRemediation(message.repo, message.pr);
+      setCache(cacheKey, data);
+      return { success: true, data };
+    }
+
+    case "APPLY_PR_REMEDIATION": {
+      const data = await applyPRRemediation(message.repo, message.pr);
+      // Invalidate caches upon patch application
+      cache.delete(`status:${message.repo}:${message.pr}`);
+      cache.delete(`findings:${message.repo}:${message.pr}`);
+      cache.delete(`summary:${message.repo}:${message.pr}`);
+      cache.delete(`remediation:${message.repo}:${message.pr}`);
       return { success: true, data };
     }
 
