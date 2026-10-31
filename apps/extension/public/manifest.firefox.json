@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "CodeFort Guard",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Real-time malicious PR detector, dependency risk checker, and security review copilot.",
   "permissions": [
     "storage",

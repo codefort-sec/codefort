@@ -116,7 +116,7 @@ export default function ExtensionGuidePage() {
                   </p>
                 </div>
                 <a
-                  href="/downloads/codefort-guard-chrome-v0.1.2.zip"
+                  href="/downloads/codefort-guard-chrome-v0.1.3.zip"
                   download
                   className="bg-lime hover:bg-lime-muted text-bg font-extrabold text-xs py-2 px-3 text-center uppercase tracking-wider flex items-center justify-center gap-1"
                 >
@@ -161,7 +161,7 @@ export default function ExtensionGuidePage() {
               <ul className="text-xs text-text-muted space-y-1.5 list-disc list-inside">
                 <li>Pin the <strong>CF_ CodeFort Guard</strong> icon to your browser toolbar for quick access.</li>
                 <li>Navigate to any pull request on GitHub (e.g. <a href="https://github.com/codefort-sec/vulnerable-test-repo/pull/1" target="_blank" rel="noreferrer" className="text-lime hover:underline">vulnerable-test-repo#1</a>).</li>
-                <li>The inline <strong>🛡 CODEFORT: BLOCKED</strong> badge appears right under the PR title. Click it to inspect the BARQAI risk breakdown!</li>
+                <li>The proactive security alert banner appears immediately on open, and the inline <strong>🛡 CODEFORT</strong> badge appears under the PR title!</li>
               </ul>
             </div>
           </div>
@@ -181,7 +181,7 @@ export default function ExtensionGuidePage() {
                 </div>
                 <div className="flex flex-col gap-2">
                   <a
-                    href="/downloads/codefort-guard-firefox-v0.1.2.xpi"
+                    href="/downloads/codefort-guard-firefox-v0.1.3.xpi"
                     download
                     className="bg-lime hover:bg-lime-muted text-bg font-extrabold text-xs py-2 px-3 text-center uppercase tracking-wider flex items-center justify-center gap-1"
                   >
@@ -189,7 +189,7 @@ export default function ExtensionGuidePage() {
                     <span>↓</span>
                   </a>
                   <a
-                    href="/downloads/codefort-guard-firefox-v0.1.2.zip"
+                    href="/downloads/codefort-guard-firefox-v0.1.3.zip"
                     download
                     className="border border-border hover:border-lime text-text hover:text-lime text-xs py-1.5 px-3 text-center uppercase tracking-wider"
                   >

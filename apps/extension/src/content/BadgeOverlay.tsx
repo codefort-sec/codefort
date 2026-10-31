@@ -289,7 +289,7 @@ export const BadgeOverlay: React.FC<BadgeOverlayProps> = ({
           )}
 
           <div className="codefort-popover-footer">
-            <span className="codefort-version-label">CodeFort Guard v0.1.2</span>
+            <span className="codefort-version-label">CodeFort Guard v0.1.3</span>
             <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
               {onRetry && (
                 <button

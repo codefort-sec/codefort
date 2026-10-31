@@ -400,7 +400,7 @@ export const App: React.FC = () => {
 
       {/* Footer */}
       <footer className="popup-footer">
-        <span>CodeFort Guard v0.1.2</span>
+        <span>CodeFort Guard v0.1.3</span>
         <div style={{ display: "flex", gap: "8px" }}>
           <a href="https://codefort-web.vercel.app/extension" target="_blank" rel="noreferrer">
             Guide ↗

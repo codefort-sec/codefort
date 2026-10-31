@@ -5,7 +5,7 @@
 [![Install Guide](https://img.shields.io/badge/Install_Guide-Extension_Setup-d7ff35?style=flat-square&logo=googlechrome)](https://codefort-web.vercel.app/extension)
 [![FastAPI Core](https://img.shields.io/badge/FastAPI_Engine-Vercel_Live-00e5ff?style=flat-square&logo=fastapi)](https://codefort-lilac.vercel.app/docs)
 [![Gemini Engine](https://img.shields.io/badge/AI_Copilot-Gemini_3.5_Flash_Lite-4285F4?style=flat-square&logo=google)](https://codefort-lilac.vercel.app/docs)
-[![Extension Release](https://img.shields.io/badge/Extension_Release-v0.1.2-ff0055?style=flat-square&logo=github)](https://github.com/codefort-sec/codefort/releases/tag/v0.1.2)
+[![Extension Release](https://img.shields.io/badge/Extension_Release-v0.1.3-ff0055?style=flat-square&logo=github)](https://github.com/codefort-sec/codefort/releases/tag/v0.1.3)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue?style=flat-square)](LICENSE)
 
 > **Next-generation AI security platform that intercepts malicious pull requests, detects software supply chain poisoning, and prevents CI/CD workflow injection attacks before code merges into production.**
@@ -20,8 +20,8 @@
 | **Extension Setup Guide** | [`https://codefort-web.vercel.app/extension`](https://codefort-web.vercel.app/extension) | Interactive step-by-step browser extension installer & pairing assistant |
 | **Backend API Engine** | [`https://codefort-lilac.vercel.app`](https://codefort-lilac.vercel.app) | FastAPI core, multi-engine detection, & BARQAI explainability layer |
 | **API Documentation** | [`https://codefort-lilac.vercel.app/docs`](https://codefort-lilac.vercel.app/docs) | Interactive Swagger UI with OpenAPI 3.0 schemas |
-| **Chrome Extension** | [`v0.1.2 Chrome (.zip)`](https://github.com/codefort-sec/codefort/releases/download/v0.1.2/codefort-guard-chrome-v0.1.2.zip) | CodeFort Guard MV3 package for Chrome, Brave, Arc, and Edge |
-| **Firefox Extension** | [`v0.1.2 Firefox (.xpi)`](https://github.com/codefort-sec/codefort/releases/download/v0.1.2/codefort-guard-firefox-v0.1.2.xpi) / [`.zip`](https://github.com/codefort-sec/codefort/releases/download/v0.1.2/codefort-guard-firefox-v0.1.2.zip) | Mozilla AMO compliant WebExtension with Gecko ID (`strict_min_version: 115.0`) |
+| **Chrome Extension** | [`v0.1.3 Chrome (.zip)`](https://github.com/codefort-sec/codefort/releases/download/v0.1.3/codefort-guard-chrome-v0.1.3.zip) | CodeFort Guard MV3 package for Chrome, Brave, Arc, and Edge |
+| **Firefox Extension** | [`v0.1.3 Firefox (.xpi)`](https://github.com/codefort-sec/codefort/releases/download/v0.1.3/codefort-guard-firefox-v0.1.3.xpi) / [`.zip`](https://github.com/codefort-sec/codefort/releases/download/v0.1.3/codefort-guard-firefox-v0.1.3.zip) | Mozilla AMO compliant WebExtension with Gecko ID (`strict_min_version: 115.0`) |
 | **Malicious Test Repo** | [`codefort-sec/vulnerable-test-repo`](https://github.com/codefort-sec/vulnerable-test-repo) | Live attack playground with active adversarial PRs (#1, #2, #3) |
 | **Clean Baseline Repo** | [`codefort-sec/clean-test-repo`](https://github.com/codefort-sec/clean-test-repo) | Compliant baseline repository demonstrating verified PASS PRs (0 risk score) |
 | **GitHub Organization** | [`https://github.com/codefort-sec`](https://github.com/codefort-sec) | Organization holding platform monorepo and public demo repositories |
@@ -131,7 +131,7 @@ CodeFort Guard injects security verdicts directly into GitHub Pull Requests. It 
 ### A. Google Chrome / Chromium (Brave, Edge, Arc)
 
 1. **Download the Extension Archive**:
-   - Download [`codefort-guard-chrome-v0.1.2.zip`](https://github.com/codefort-sec/codefort/releases/download/v0.1.2/codefort-guard-chrome-v0.1.2.zip) from GitHub Releases.
+   - Download [`codefort-guard-chrome-v0.1.3.zip`](https://github.com/codefort-sec/codefort/releases/download/v0.1.3/codefort-guard-chrome-v0.1.3.zip) from GitHub Releases or directly from the [CodeFort Install Guide](https://codefort-web.vercel.app/extension).
 2. **Extract the ZIP**:
    - Extract the archive to a local folder (e.g., `~/Downloads/codefort-guard-chrome`).
 3. **Open Extensions in Chrome**:
@@ -146,14 +146,14 @@ CodeFort Guard injects security verdicts directly into GitHub Pull Requests. It 
    - Click the Extensions puzzle icon in Chrome and pin **CodeFort Guard**.
 7. **Verify on GitHub**:
    - Open any PR (e.g. [`codefort-sec/vulnerable-test-repo/pull/1`](https://github.com/codefort-sec/vulnerable-test-repo/pull/1)).
-   - The **🛡 CODEFORT: BLOCKED** badge appears immediately under the PR title!
+   - A proactive threat notification banner slides in, and the **🛡 CODEFORT: BLOCKED** badge appears under the PR title!
 
 ---
 
 ### B. Mozilla Firefox (Developer & AMO Compliant)
 
 1. **Download the Firefox Package**:
-   - Download [`codefort-guard-firefox-v0.1.2.xpi`](https://github.com/codefort-sec/codefort/releases/download/v0.1.2/codefort-guard-firefox-v0.1.2.xpi) or [`codefort-guard-firefox-v0.1.2.zip`](https://github.com/codefort-sec/codefort/releases/download/v0.1.2/codefort-guard-firefox-v0.1.2.zip).
+   - Download [`codefort-guard-firefox-v0.1.3.xpi`](https://github.com/codefort-sec/codefort/releases/download/v0.1.3/codefort-guard-firefox-v0.1.3.xpi) or [`codefort-guard-firefox-v0.1.3.zip`](https://github.com/codefort-sec/codefort/releases/download/v0.1.3/codefort-guard-firefox-v0.1.3.zip).
 2. **Open Firefox Debugging**:
    - In Firefox, navigate to: `about:debugging#/runtime/this-firefox`
 3. **Load Temporary Add-on**:
@@ -226,7 +226,7 @@ Web Dashboard will be live at `http://localhost:3000`.
 cd apps/extension
 npm install
 npm run package
-# Generates codefort-guard-chrome-v0.1.2.zip, firefox-v0.1.2.zip, and firefox-v0.1.2.xpi
+# Generates codefort-guard-chrome-v0.1.3.zip, firefox-v0.1.3.zip, and firefox-v0.1.3.xpi
 ```
 
 ---

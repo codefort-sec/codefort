@@ -106,30 +106,28 @@ export default function SettingsPage() {
                 <span>↗</span>
               </Link>
               <a
-                href="https://github.com/codefort-sec/codefort/releases/download/v0.1.2/codefort-guard-chrome-v0.1.2.zip"
-                target="_blank"
-                rel="noopener noreferrer"
+                href="/downloads/codefort-guard-chrome-v0.1.3.zip"
+                download
                 className="border border-border hover:border-lime text-text hover:text-lime text-xs font-mono px-3 py-2 flex items-center gap-2 transition-colors"
               >
                 <span>📦 Chrome (.zip)</span>
                 <span>↓</span>
               </a>
               <a
-                href="https://github.com/codefort-sec/codefort/releases/download/v0.1.2/codefort-guard-firefox-v0.1.2.xpi"
-                target="_blank"
-                rel="noopener noreferrer"
+                href="/downloads/codefort-guard-firefox-v0.1.3.xpi"
+                download
                 className="border border-border hover:border-lime text-text hover:text-lime text-xs font-mono px-3 py-2 flex items-center gap-2 transition-colors"
               >
                 <span>🦊 Firefox (.xpi)</span>
                 <span>↓</span>
               </a>
               <a
-                href="https://github.com/codefort-sec/codefort/releases/tag/v0.1.2"
+                href="https://github.com/codefort-sec/codefort/releases/tag/v0.1.3"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="border border-border hover:border-text-dim text-text-dim hover:text-text text-xs font-mono px-3 py-2 flex items-center gap-2 transition-colors"
               >
-                <span>Release v0.1.2 ↗</span>
+                <span>Release v0.1.3 ↗</span>
               </a>
             </div>
           </div>
