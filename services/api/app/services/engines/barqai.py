@@ -17,9 +17,10 @@ class BarqAIEngine:
     """Zero-trust AI explanation engine that links concrete evidence to security narratives."""
 
     def __init__(self):
+        import os
         self.provider = settings.LLM_PROVIDER
-        self.api_key = settings.LLM_API_KEY
-        self.gemini_url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent"
+        self.api_key = settings.LLM_API_KEY or settings.GEMINI_API_KEY or os.environ.get("GEMINI_API_KEY") or os.environ.get("LLM_API_KEY")
+        self.gemini_url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent"
 
     async def generate_explanation(
         self,
@@ -45,7 +46,7 @@ class BarqAIEngine:
         findings: List[FindingResponse],
         verdict: Verdict,
     ) -> Optional[ScanSummary]:
-        """Calls Google Gemini 1.5 Flash API with strict JSON schema constraints."""
+        """Calls Google Gemini API with strict JSON schema constraints."""
         findings_context = []
         for f in findings:
             findings_context.append({
@@ -101,7 +102,14 @@ class BarqAIEngine:
                 if candidates:
                     parts = candidates[0].get("content", {}).get("parts", [])
                     if parts:
-                        raw_json = parts[0].get("text", "{}")
+                        raw_json = parts[0].get("text", "{}").strip()
+                        if raw_json.startswith("```json"):
+                            raw_json = raw_json[7:]
+                        if raw_json.startswith("```"):
+                            raw_json = raw_json[3:]
+                        if raw_json.endswith("```"):
+                            raw_json = raw_json[:-3]
+                        raw_json = raw_json.strip()
                         parsed = json.loads(raw_json)
                         return ScanSummary(
                             what_changed=parsed.get("what_changed", "Code modifications analyzed."),

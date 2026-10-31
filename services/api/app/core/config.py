@@ -50,6 +50,7 @@ class Settings(BaseSettings):
     # LLM / AI (BARQAI Engine)
     LLM_PROVIDER: str = "gemini"
     LLM_API_KEY: str = ""
+    GEMINI_API_KEY: str = ""
 
     # Queue & Cache
     REDIS_URL: str = "redis://localhost:6379/0"
