@@ -13,6 +13,7 @@ POPULAR_PACKAGES = {
         "express", "react", "react-dom", "lodash", "axios", "crypto-js",
         "chalk", "moment", "commander", "webpack", "next", "vue",
         "cross-env", "dotenv", "typescript", "debug", "tslib", "rxjs",
+        "request", "requests",
     ],
     "pypi": [
         "requests", "numpy", "pandas", "flask", "django", "urllib3",
