@@ -1,10 +1,16 @@
 """Repository management and PR listing endpoints."""
 
+import uuid
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, Path, Query
-from app.core.errors import NotFoundException
-from app.schemas.repository import RepositoryConnectRequest, RepositoryPolicyUpdate, RepositoryResponse
+from app.core.errors import BadRequestException, NotFoundException
+from app.schemas.repository import (
+    RepositoryConnectRequest,
+    RepositoryPolicyUpdate,
+    RepositoryRegisterRequest,
+    RepositoryResponse,
+)
 from app.services.mock_engine import mock_store
 
 router = APIRouter(prefix="/repositories", tags=["Repositories"])
@@ -82,6 +88,53 @@ _mock_repositories = {
 async def list_repositories():
     """Lists repositories accessible to the user."""
     return list(_mock_repositories.values())
+
+
+@router.post("", response_model=RepositoryResponse, status_code=201)
+async def register_repository(body: RepositoryRegisterRequest):
+    """Registers and connects a new GitHub repository."""
+    raw_name = body.full_name.strip()
+    if raw_name.startswith("https://github.com/"):
+        raw_name = raw_name.replace("https://github.com/", "")
+    raw_name = raw_name.strip("/")
+    parts = raw_name.split("/")
+    if len(parts) != 2 or not parts[0] or not parts[1]:
+        raise BadRequestException(message="Repository must be in format 'owner/repo'.", code="INVALID_REPO_FORMAT")
+
+    owner, repo_name = parts[0], parts[1]
+    canonical_name = f"{owner}/{repo_name}"
+
+    # Check if already registered
+    for r in _mock_repositories.values():
+        if r.full_name.lower() == canonical_name.lower():
+            r.is_connected = True
+            if body.policy:
+                r.policy = body.policy
+            return r
+
+    repo_id = f"repo_{uuid.uuid4().hex[:6]}"
+    default_policy = {
+        "block_on_critical": True,
+        "review_on_high": True,
+        "require_static": True,
+        "require_dependency": True,
+    }
+    if body.policy:
+        default_policy.update(body.policy)
+
+    new_repo = RepositoryResponse(
+        id=repo_id,
+        github_repo_id=abs(hash(canonical_name)) % 1000000 + 10000,
+        owner_login=owner,
+        name=repo_name,
+        full_name=canonical_name,
+        is_private=False,
+        is_connected=True,
+        policy=default_policy,
+        created_at=datetime.now(timezone.utc),
+    )
+    _mock_repositories[repo_id] = new_repo
+    return new_repo
 
 
 @router.get("/{owner}/{repo}", response_model=RepositoryResponse)

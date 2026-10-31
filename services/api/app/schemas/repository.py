@@ -22,5 +22,10 @@ class RepositoryConnectRequest(BaseModel):
     policy: Optional[Dict[str, Any]] = None
 
 
+class RepositoryRegisterRequest(BaseModel):
+    full_name: str = Field(..., description="Full repository name: owner/repo")
+    policy: Optional[Dict[str, Any]] = None
+
+
 class RepositoryPolicyUpdate(BaseModel):
     policy: Dict[str, Any] = Field(..., description="Updated security policy configuration")

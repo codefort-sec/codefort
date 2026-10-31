@@ -32,6 +32,16 @@ export default function DashboardPage() {
   const [prs, setPrs] = useState<PRItem[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Connect Repository Modal State
+  const [showConnectModal, setShowConnectModal] = useState(false);
+  const [newRepoName, setNewRepoName] = useState("");
+  const [connecting, setConnecting] = useState(false);
+  const [connectError, setConnectError] = useState<string | null>(null);
+  const [policyBlockCritical, setPolicyBlockCritical] = useState(true);
+  const [policyReviewHigh, setPolicyReviewHigh] = useState(true);
+  const [policyRequireStatic, setPolicyRequireStatic] = useState(true);
+  const [policyRequireDep, setPolicyRequireDep] = useState(true);
+
   useEffect(() => {
     async function loadRepos() {
       try {
@@ -64,6 +74,54 @@ export default function DashboardPage() {
     loadPrs();
   }, [selectedRepo]);
 
+  async function handleConnectRepo(e: React.FormEvent) {
+    e.preventDefault();
+    if (!newRepoName.trim()) {
+      setConnectError("Please enter a valid repository (e.g. owner/repo)");
+      return;
+    }
+    setConnecting(true);
+    setConnectError(null);
+    try {
+      const cleanName = newRepoName
+        .trim()
+        .replace(/^https:\/\/github\.com\//, "")
+        .replace(/^\/+|\/+$/g, "");
+
+      if (!cleanName.includes("/")) {
+        setConnectError("Format must be 'owner/repo' or full GitHub URL");
+        setConnecting(false);
+        return;
+      }
+
+      const policy = {
+        block_on_critical: policyBlockCritical,
+        review_on_high: policyReviewHigh,
+        require_static: policyRequireStatic,
+        require_dependency: policyRequireDep,
+      };
+
+      const res = await apiFetch<RepoItem>("/api/v1/repositories", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ full_name: cleanName, policy }),
+      });
+
+      setRepos((prev) => {
+        const exists = prev.some((r) => r.full_name === res.full_name);
+        return exists ? prev : [res, ...prev];
+      });
+      setSelectedRepo(res.full_name);
+      setNewRepoName("");
+      setShowConnectModal(false);
+    } catch (err: any) {
+      console.error("Failed to connect repository:", err);
+      setConnectError(err?.message || "Failed to connect repository. Please verify name.");
+    } finally {
+      setConnecting(false);
+    }
+  }
+
   return (
     <div className="max-w-7xl mx-auto px-4 py-8 font-mono flex flex-col gap-8 w-full">
       {/* Header */}
@@ -81,7 +139,11 @@ export default function DashboardPage() {
           </Link>
           <button
             type="button"
-            className="bg-lime hover:bg-lime-muted text-bg text-xs px-4 py-2 uppercase font-extrabold"
+            onClick={() => {
+              setConnectError(null);
+              setShowConnectModal(true);
+            }}
+            className="bg-lime hover:bg-lime-muted text-bg text-xs px-4 py-2 uppercase font-extrabold transition-colors cursor-pointer"
           >
             + Connect Repository
           </button>
@@ -215,6 +277,110 @@ export default function DashboardPage() {
           </table>
         </div>
       </section>
+
+      {/* Connect Repository Modal */}
+      {showConnectModal && (
+        <div className="fixed inset-0 bg-bg/85 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="border-2 border-lime bg-surface max-w-lg w-full p-6 shadow-[0_0_30px_rgba(204,255,0,0.2)] font-mono flex flex-col gap-5">
+            <div className="flex items-center justify-between border-b border-border pb-3">
+              <div>
+                <div className="text-[10px] text-lime uppercase tracking-widest">// SYSTEM ACTION: REPO_CONNECT</div>
+                <h2 className="text-lg font-black text-text uppercase">CONNECT GITHUB REPOSITORY</h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowConnectModal(false)}
+                className="text-text-muted hover:text-text font-bold text-sm"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleConnectRepo} className="flex flex-col gap-4">
+              <div>
+                <label className="block text-xs uppercase tracking-wider text-text-dim mb-1">
+                  GitHub Repository (owner/repo)
+                </label>
+                <input
+                  type="text"
+                  value={newRepoName}
+                  onChange={(e) => setNewRepoName(e.target.value)}
+                  placeholder="e.g. your-org/awesome-repo or full GitHub URL"
+                  className="w-full bg-surface-raised border border-border focus:border-lime text-text px-3 py-2 text-xs outline-none"
+                  autoFocus
+                />
+                <div className="text-[10px] text-text-muted mt-1">
+                  CodeFort will register webhook listeners for PR opened and synchronize events.
+                </div>
+              </div>
+
+              {/* Policy Checklist */}
+              <div className="border border-border p-3 flex flex-col gap-2 bg-surface-raised/40">
+                <div className="text-[11px] font-bold text-text uppercase">Enforced Security Baseline:</div>
+                <label className="flex items-center gap-2 text-xs cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={policyBlockCritical}
+                    onChange={(e) => setPolicyBlockCritical(e.target.checked)}
+                    className="accent-lime"
+                  />
+                  <span>Block merge on Critical severity findings</span>
+                </label>
+                <label className="flex items-center gap-2 text-xs cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={policyReviewHigh}
+                    onChange={(e) => setPolicyReviewHigh(e.target.checked)}
+                    className="accent-lime"
+                  />
+                  <span>Require security review on High findings</span>
+                </label>
+                <label className="flex items-center gap-2 text-xs cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={policyRequireStatic}
+                    onChange={(e) => setPolicyRequireStatic(e.target.checked)}
+                    className="accent-lime"
+                  />
+                  <span>Static AST Analysis (Inspect lifecycle hooks & scripts)</span>
+                </label>
+                <label className="flex items-center gap-2 text-xs cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={policyRequireDep}
+                    onChange={(e) => setPolicyRequireDep(e.target.checked)}
+                    className="accent-lime"
+                  />
+                  <span>Dependency Intelligence (Levenshtein typosquats & OSV CVEs)</span>
+                </label>
+              </div>
+
+              {connectError && (
+                <div className="text-xs text-danger bg-danger/10 border border-danger p-2">
+                  ⚠ {connectError}
+                </div>
+              )}
+
+              <div className="flex justify-end gap-3 pt-2 border-t border-border">
+                <button
+                  type="button"
+                  onClick={() => setShowConnectModal(false)}
+                  className="border border-border text-text hover:border-text-dim text-xs px-4 py-2 uppercase font-bold"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={connecting}
+                  className="bg-lime hover:bg-lime-muted text-bg text-xs px-5 py-2 uppercase font-extrabold transition-colors disabled:opacity-50"
+                >
+                  {connecting ? "CONNECTING..." : "[+] CONNECT REPOSITORY"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

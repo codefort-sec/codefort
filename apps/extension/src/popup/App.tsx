@@ -249,15 +249,15 @@ export const App: React.FC = () => {
         <div className="card" style={{ padding: "8px 12px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <span style={{ color: "#686d64", fontSize: "10px" }}>Target API:</span>
-            <span style={{ color: "#a2a59a", fontSize: "10px" }}>{config?.apiUrl || "http://localhost:8000"}</span>
+            <span style={{ color: "#a2a59a", fontSize: "10px" }}>{config?.apiUrl || "https://codefort-lilac.vercel.app"}</span>
           </div>
         </div>
       </main>
 
       {/* Footer */}
       <footer className="popup-footer">
-        <span>CodeFort Guard v0.1.0</span>
-        <a href="http://localhost:3000" target="_blank" rel="noreferrer">
+        <span>CodeFort Guard v0.1.1</span>
+        <a href="https://codefort-web.vercel.app/dashboard" target="_blank" rel="noreferrer">
           Dashboard ↗
         </a>
       </footer>
