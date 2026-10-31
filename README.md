@@ -1,9 +1,8 @@
 # CODEFORT // ZERO-TRUST PR & SUPPLY CHAIN DEFENSE
 
-[![CodeFort CI](https://github.com/codefort-sec/codefort/actions/workflows/ci.yml/badge.svg)](https://github.com/codefort-sec/codefort/actions/workflows/ci.yml)
+[![CodeFort CI](https://github.com/codefort-sec/barqai/actions/workflows/ci.yml/badge.svg)](https://github.com/codefort-sec/barqai/actions/workflows/ci.yml)
 [![Web Dashboard](https://img.shields.io/badge/Web_Dashboard-Vercel_Live-00ff66?style=flat-square&logo=vercel)](https://codefort-web.vercel.app)
 [![API Engine](https://img.shields.io/badge/FastAPI_Engine-Vercel_Live-00e5ff?style=flat-square&logo=fastapi)](https://codefort-lilac.vercel.app/docs)
-[![Extension Release](https://img.shields.io/badge/Chrome_Extension-v0.1.1-ff0055?style=flat-square&logo=googlechrome)](https://github.com/codefort-sec/codefort/releases/tag/v0.1.1)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue?style=flat-square)](LICENSE)
 
 > **Next-generation AI security platform that intercepts malicious pull requests, detects software supply chain poisoning, and prevents CI/CD workflow injection attacks before code merges into production.**
@@ -17,10 +16,9 @@
 | **Web Dashboard** | [`https://codefort-web.vercel.app`](https://codefort-web.vercel.app) | Cyber Brutalist UI for PR forensics, policy toggles, & audits |
 | **Backend API** | [`https://codefort-lilac.vercel.app`](https://codefort-lilac.vercel.app) | FastAPI core, multi-engine detection, & BARQAI explainability |
 | **API Documentation** | [`https://codefort-lilac.vercel.app/docs`](https://codefort-lilac.vercel.app/docs) | Interactive Swagger UI with all schemas & OpenAPI 3.0 spec |
-| **Chrome Extension** | [`v0.1.2 Chrome (.zip)`](https://github.com/codefort-sec/codefort/releases/tag/v0.1.2) | CodeFort Guard MV3 package for Chrome, Brave, Arc, Edge |
-| **Firefox Extension** | [`v0.1.2 Firefox (.zip / .xpi)`](https://github.com/codefort-sec/codefort/releases/tag/v0.1.2) | Mozilla AMO compliant WebExtension with Gecko ID |
-| **Malicious Test Repo** | [`codefort-sec/vulnerable-test-repo`](https://github.com/codefort-sec/vulnerable-test-repo) | Live playground with active attack PRs for judge demonstration |
-| **Clean Baseline Repo** | [`codefort-sec/clean-test-repo`](https://github.com/codefort-sec/clean-test-repo) | Compliant baseline repository demonstrating verified PASS PRs |
+| **Chrome Extension** | [`CodeFort Guard MV3`](apps/extension) | CodeFort Guard MV3 package for Chrome, Brave, Arc, Edge |
+| **Firefox Extension** | [`CodeFort Guard WebExtension`](apps/extension) | Mozilla AMO compliant WebExtension with Gecko ID |
+| **GitHub Repository** | [`codefort-sec/barqai`](https://github.com/codefort-sec/barqai) | Main organization repository with AI models & detection engines |
 | **GitHub Organization** | [`https://github.com/codefort-sec`](https://github.com/codefort-sec) | Organization holding platform monorepo and demo repositories |
 
 ---
@@ -104,12 +102,54 @@ flowchart TD
    - Flags dangerous permission scopes (`permissions: write-all`).
    - Detects untrusted script injection vulnerabilities (e.g., inline `${{ github.event.pull_request.title }}`).
 
-4. **BARQAI Explainability & Remediation Engine**:
-   - Generates structured, deterministic explanations:
+4. **BARQAI AI Explanation & Remediation Engine**:
+   - Powered by **Qwen3.8-Max** (`qwen/qwen3.8-max-0902`) via OpenRouter, with structured JSON schema auto-repair and deterministic local synthesis fallback.
+   - **Dynamic Few-Shot Learning**: Retrieves context-specific attack exemplars from domain knowledge base (`app/ai/knowledge_base.py`) matching lifecycle dropper, typosquatting, reverse shell, and workflow injection patterns.
+   - **4-Bit LoRA Fine-Tuning**: Ready-to-train parameter-efficient fine-tuning pipeline (`app/ai/train_lora.py`) targeting `Qwen2.5-Coder-7B-Instruct` on curated supply-chain defense datasets (`app/ai/dataset.jsonl`).
+   - **4-Dimensional Evaluation Benchmark**: Automated grading suite (`app/ai/eval_suite.py`) measuring:
+     - Verdict Accuracy (PASS / REVIEW / BLOCKED)
+     - Evidence Grounding Rate (links to concrete AST / diff lines)
+     - Remediation Viability (synthesizes clean patches)
+     - False Positive Resilience (against benign math and utility libraries)
+   - Generates structured incident narratives:
      - **What Changed**: Concise file and code modification summary.
      - **Evidence Observed**: Concrete indicators, line numbers, and rule matches.
      - **Why It Matters**: Concrete impact analysis (e.g. runner compromise, secret exfiltration).
-     - **Recommended Actions**: Clear remediation steps and diff preview modal.
+     - **Recommended Actions**: Clear remediation steps and clean patch suggestions.
+
+---
+
+## 🤖 AI Engine & Model Training Guide
+
+### 1. In-Context Dynamic Adaptation (Qwen3.8-Max)
+The engine connects directly via OpenRouter to Qwen3.8-Max. Set your environment variable:
+```bash
+export OPENROUTER_API_KEY="sk-or-v1-..."
+export OPENROUTER_MODEL="qwen/qwen3.8-max-0902"
+```
+
+### 2. Run On-Demand PR Scan CLI
+```bash
+cd services/api
+python run_scan.py --repo "codefort-sec/vulnerable-test-repo" --pr 1
+```
+
+### 3. Run 4-Dimensional Benchmark Evaluation
+```bash
+cd services/api
+python -m app.ai.eval_suite
+```
+
+### 4. Fine-Tune Local Qwen Model via 4-bit LoRA/QLoRA
+To specialize open-weights models (`Qwen2.5-Coder-7B-Instruct` or `Qwen2.5-Coder-1.5B-Instruct`):
+```bash
+cd services/api
+python -m app.ai.train_lora \
+  --model_id "Qwen/Qwen2.5-Coder-7B-Instruct" \
+  --dataset "app/ai/dataset.jsonl" \
+  --output_dir "./qwen-barqai-lora" \
+  --epochs 3
+```
 
 ---
 
@@ -117,35 +157,35 @@ flowchart TD
 
 ### 1. Test the Live Dashboard
 Navigate directly to **[`https://codefort-web.vercel.app/dashboard`](https://codefort-web.vercel.app/dashboard)**:
-- Click on **`codefort-sec/codefort`** to inspect the live scenario PR scans.
+- Click on **`codefort-sec/vulnerable-test-repo`** to inspect the live scenario PR scans.
 - Click **`FORENSICS ↗`** on any PR to view the BARQAI incident explanation, coverage checklist, and remediation diff modal.
 
 ### 2. Install the Browser Extension (Chrome & Firefox)
 
 #### A. Google Chrome / Chromium (Brave, Arc, Edge)
-1. Download **[`codefort-guard-chrome-v0.1.2.zip`](https://github.com/codefort-sec/codefort/releases/tag/v0.1.2)** from GitHub Releases.
-2. Unzip the archive.
+1. Navigate to [`apps/extension`](apps/extension).
+2. Run `npm install && npm run build` to generate `dist/`.
 3. In Chrome, open `chrome://extensions/` and toggle **Developer mode** on (top-right).
-4. Click **Load unpacked** and select the unzipped directory.
+4. Click **Load unpacked** and select `apps/extension/dist`.
 5. Browse any PR on [`codefort-sec/vulnerable-test-repo/pull/1`](https://github.com/codefort-sec/vulnerable-test-repo/pull/1) to see the badge and inline warnings!
 
-#### B. Mozilla Firefox (Free Add-on Store / Developer Mode)
-1. Download **[`codefort-guard-firefox-v0.1.2.zip`](https://github.com/codefort-sec/codefort/releases/tag/v0.1.2)** or **[`codefort-guard-firefox-v0.1.2.xpi`](https://github.com/codefort-sec/codefort/releases/tag/v0.1.2)**.
-2. In Firefox, navigate to `about:debugging#/runtime/this-firefox`.
-3. Click **Load Temporary Add-on...** and select the downloaded file (or `manifest.json` inside the extracted folder).
-4. The extension ID `codefort-guard@codefort.sec` activates instantly with all security analysis features enabled.
-5. *(Optional Store Submission)*: Ready for 1-click free publication on [addons.mozilla.org (AMO)](https://addons.mozilla.org/developers/) with 0 submission fees.
+#### B. Mozilla Firefox
+1. Navigate to `about:debugging#/runtime/this-firefox`.
+2. Click **Load Temporary Add-on...** and select `apps/extension/dist/manifest.json`.
+3. The extension activates with all security analysis features enabled.
 
 ### 3. Running Locally
 
 ```bash
 # Clone the repository
-git clone https://github.com/codefort-sec/codefort.git
-cd codefort
+git clone https://github.com/codefort-sec/barqai.git
+cd barqai
 
 # Run Backend API
 cd services/api
-uv sync
+uv venv
+uv pip install -e ".[dev]"
+uv run pytest -v
 uv run uvicorn app.main:app --reload --port 8000
 
 # Run Web Dashboard
