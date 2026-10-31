@@ -296,6 +296,14 @@ class MockStore:
         self.findings_by_scan["scan_pr_4"] = []
         self.pr_latest_scan[f"{cf_repo}#4"] = "scan_pr_4"
 
+        # Map to live test repositories
+        vuln_repo = "codefort-sec/vulnerable-test-repo"
+        clean_repo = "codefort-sec/clean-test-repo"
+        self.pr_latest_scan[f"{vuln_repo}#1"] = "scan_pr_1"
+        self.pr_latest_scan[f"{vuln_repo}#2"] = "scan_pr_2"
+        self.pr_latest_scan[f"{vuln_repo}#3"] = "scan_pr_3"
+        self.pr_latest_scan[f"{clean_repo}#1"] = "scan_pr_4"
+
     def get_scan(self, scan_id: str) -> Optional[ScanResponse]:
         return self.scans.get(scan_id)
 
@@ -305,7 +313,10 @@ class MockStore:
     def get_latest_scan_for_pr(self, repository: str, pr_number: int) -> Optional[ScanResponse]:
         scan_id = self.pr_latest_scan.get(f"{repository}#{pr_number}")
         if scan_id:
-            return self.scans.get(scan_id)
+            scan = self.scans.get(scan_id)
+            if scan and scan.repository != repository:
+                return scan.model_copy(update={"repository": repository, "pull_request": pr_number})
+            return scan
         return None
 
     def trigger_scan(self, repository: str, pr_number: int, head_sha: Optional[str] = None) -> ScanResponse:

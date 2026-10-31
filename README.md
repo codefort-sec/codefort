@@ -18,7 +18,9 @@
 | **Backend API** | [`https://codefort-lilac.vercel.app`](https://codefort-lilac.vercel.app) | FastAPI core, multi-engine detection, & BARQAI explainability |
 | **API Documentation** | [`https://codefort-lilac.vercel.app/docs`](https://codefort-lilac.vercel.app/docs) | Interactive Swagger UI with all schemas & OpenAPI 3.0 spec |
 | **Chrome Extension** | [`v0.1.1 Release Asset (.zip)`](https://github.com/codefort-sec/codefort/releases/tag/v0.1.1) | CodeFort Guard MV3 extension with inline PR badges & diff warnings |
-| **GitHub Organization** | [`https://github.com/codefort-sec`](https://github.com/codefort-sec) | Monorepo source, CI pipelines, and attack scenarios |
+| **Malicious Test Repo** | [`codefort-sec/vulnerable-test-repo`](https://github.com/codefort-sec/vulnerable-test-repo) | Live playground with active attack PRs for judge demonstration |
+| **Clean Baseline Repo** | [`codefort-sec/clean-test-repo`](https://github.com/codefort-sec/clean-test-repo) | Compliant baseline repository demonstrating verified PASS PRs |
+| **GitHub Organization** | [`https://github.com/codefort-sec`](https://github.com/codefort-sec) | Organization holding platform monorepo and demo repositories |
 
 ---
 
@@ -152,12 +154,12 @@ npm run build
 
 ## 🧪 Verified Attack Scenarios
 
-| Scenario ID | Attack Vector | Detection Rule | Verdict | Risk Score |
-| :--- | :--- | :--- | :--- | :--- |
-| **`01_malicious_preinstall`** | `curl \| bash` dropper in `package.json` preinstall | `npm.exec.preinstall` | **`BLOCKED`** | 95 / 100 |
-| **`02_typosquat_dependency`** | Typosquatted package `reqeusts` (edit distance 1) | `dep.typosquat` | **`REVIEW_REQUIRED`** | 65 / 100 |
-| **`03_unsafe_workflow_injection`** | `pull_request_target` + write-all + `${{ github.event... }}` | `workflow.target.checkout` | **`BLOCKED`** | 92 / 100 |
-| **`04_clean_feature_pr`** | Standard zero-trust telemetry contribution | *N/A (clean baseline)* | **`PASS`** | 0 / 100 |
+| Scenario ID | Live PR Link | Attack Vector | Detection Rule | Verdict | Risk Score |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **`01_malicious_preinstall`** | [`vulnerable-test-repo#1`](https://github.com/codefort-sec/vulnerable-test-repo/pull/1) | `curl \| bash` dropper in `package.json` preinstall | `npm.exec.preinstall` | **`BLOCKED`** | 95 / 100 |
+| **`02_typosquat_dependency`** | [`vulnerable-test-repo#2`](https://github.com/codefort-sec/vulnerable-test-repo/pull/2) | Typosquatted package `reqeusts` (edit distance 1) | `dep.typosquat` | **`REVIEW_REQUIRED`** | 65 / 100 |
+| **`03_unsafe_workflow_injection`** | [`vulnerable-test-repo#3`](https://github.com/codefort-sec/vulnerable-test-repo/pull/3) | `pull_request_target` + write-all + `${{ github.event... }}` | `workflow.target.checkout` | **`BLOCKED`** | 92 / 100 |
+| **`04_clean_feature_pr`** | [`clean-test-repo#1`](https://github.com/codefort-sec/clean-test-repo/pull/1) | Standard zero-trust telemetry contribution | *N/A (clean baseline)* | **`PASS`** | 0 / 100 |
 
 ---
 

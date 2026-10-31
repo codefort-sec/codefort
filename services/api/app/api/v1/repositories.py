@@ -11,6 +11,38 @@ router = APIRouter(prefix="/repositories", tags=["Repositories"])
 
 # Mock repository catalog
 _mock_repositories = {
+    "repo_vulnerable": RepositoryResponse(
+        id="repo_vulnerable",
+        github_repo_id=30301,
+        owner_login="codefort-sec",
+        name="vulnerable-test-repo",
+        full_name="codefort-sec/vulnerable-test-repo",
+        is_private=False,
+        is_connected=True,
+        policy={
+            "block_on_critical": True,
+            "review_on_high": True,
+            "require_static": True,
+            "require_dependency": True,
+        },
+        created_at=datetime(2026, 10, 31, 0, 0, 0, tzinfo=timezone.utc),
+    ),
+    "repo_clean": RepositoryResponse(
+        id="repo_clean",
+        github_repo_id=30302,
+        owner_login="codefort-sec",
+        name="clean-test-repo",
+        full_name="codefort-sec/clean-test-repo",
+        is_private=False,
+        is_connected=True,
+        policy={
+            "block_on_critical": True,
+            "review_on_high": True,
+            "require_static": True,
+            "require_dependency": True,
+        },
+        created_at=datetime(2026, 10, 31, 0, 0, 0, tzinfo=timezone.utc),
+    ),
     "repo_codefort": RepositoryResponse(
         id="repo_codefort",
         github_repo_id=20202,
@@ -112,6 +144,36 @@ async def list_pull_requests(
 ):
     """Lists pull requests and their latest scan status."""
     full_name = f"{owner}/{repo}"
+    if full_name == "codefort-sec/vulnerable-test-repo":
+        pr_definitions = [
+            (1, "feat(analytics): add telemetry collector and install hook", "malicious-contributor"),
+            (2, "fix(deps): replace HTTP client with lightweight utility", "dev-collaborator"),
+            (3, "ci: add automated PR title validator workflow", "ci-bot"),
+        ]
+        prs = []
+        for pr_num, title, author in pr_definitions:
+            prs.append({
+                "pull_request_number": pr_num,
+                "title": title,
+                "author_login": author,
+                "state": "open",
+                "html_url": f"https://github.com/{owner}/{repo}/pull/{pr_num}",
+                "latest_scan": mock_store.get_latest_scan_for_pr(full_name, pr_num),
+            })
+        return prs
+
+    if full_name == "codefort-sec/clean-test-repo":
+        return [
+            {
+                "pull_request_number": 1,
+                "title": "feat(security): enforce zero-trust telemetry and policy attestation",
+                "author_login": "security-lead",
+                "state": "open",
+                "html_url": f"https://github.com/{owner}/{repo}/pull/1",
+                "latest_scan": mock_store.get_latest_scan_for_pr(full_name, 1),
+            }
+        ]
+
     if full_name == "codefort-sec/codefort":
         pr_definitions = [
             (1, "feat(analytics): add telemetry collector and install hook", "malicious-contributor"),

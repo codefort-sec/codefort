@@ -38,8 +38,8 @@ export default function DashboardPage() {
         const repoList = await apiFetch<RepoItem[]>("/api/v1/repositories");
         setRepos(repoList);
         if (repoList.length > 0) {
-          const hasCodefort = repoList.some((r) => r.full_name === "codefort-sec/codefort");
-          const defaultRepo = hasCodefort ? "codefort-sec/codefort" : repoList[0].full_name;
+          const hasVuln = repoList.some((r) => r.full_name === "codefort-sec/vulnerable-test-repo");
+          const defaultRepo = hasVuln ? "codefort-sec/vulnerable-test-repo" : repoList[0].full_name;
           setSelectedRepo(defaultRepo);
         }
       } catch (err) {
