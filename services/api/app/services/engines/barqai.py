@@ -6,7 +6,10 @@ import json
 import logging
 from typing import Any, Dict, List, Optional
 import httpx
-from openai import AsyncOpenAI
+try:
+    from openai import AsyncOpenAI
+except ImportError:
+    AsyncOpenAI = None
 
 from app.core.config import settings
 from app.schemas.common import Verdict
@@ -28,7 +31,9 @@ class BarqAIEngine:
         self.reasoning = settings.OPENROUTER_REASONING
         self.gemini_url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent"
 
-    def _get_openrouter_client(self) -> AsyncOpenAI:
+    def _get_openrouter_client(self) -> Optional[AsyncOpenAI]:
+        if AsyncOpenAI is None:
+            return None
         return AsyncOpenAI(
             api_key=self.openrouter_api_key,
             base_url=self.openrouter_base_url,
@@ -117,6 +122,8 @@ class BarqAIEngine:
         )
 
         client = self._get_openrouter_client()
+        if client is None:
+            return None
         raw_content = None
 
         try:
