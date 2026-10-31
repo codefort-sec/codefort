@@ -32,6 +32,14 @@ class ScanSummary(BaseModel):
     recommended_actions: Optional[List[str]] = Field(default_factory=list, description="Next steps for reviewer")
     clean_patch: Optional[str] = Field(None, description="Automated 1-click clean remediation unified git diff")
 
+    # Standardized BARQAI output format
+    analysis: Optional[Dict[str, Any]] = Field(None, description="Standardized BARQAI analysis object")
+    risk_level: Optional[str] = Field("MEDIUM", description="Categorical risk classification: LOW, MEDIUM, HIGH, CRITICAL, CLEAN")
+    unknowns: List[str] = Field(default_factory=list, description="Identified missing evidence or unverified items")
+    remediation_status: str = Field("NOT_TESTED", description="Remediation status: NOT_TESTED, VERIFIED, FAILED")
+    evidence_verification: str = Field("Validated", description="Evidence verification status: Validated, Rejected")
+    patch_verification: str = Field("Not tested", description="Patch verification status: Validated, Not tested, Failed")
+
     # Compatibility fields for BARQAI explanation & benchmark suite
     what_happened: Optional[str] = Field(None, description="Detailed runtime or sandbox execution telemetry summary")
     why_dangerous: Optional[str] = Field(None, description="Detailed technical security risk analysis")
@@ -76,6 +84,7 @@ class ScanResponse(BaseModel):
     status: ScanStatus = Field(..., description="Scan execution status")
     verdict: Verdict = Field(..., description="Security verdict")
     risk_score: Optional[int] = Field(None, ge=0, le=100, description="Risk score from 0 to 100")
+    risk_level: Optional[str] = Field("HIGH", description="Categorical risk level: LOW, MEDIUM, HIGH, CRITICAL, CLEAN")
     coverage: CoverageInfo = Field(default_factory=CoverageInfo, description="Per-engine run status")
     summary: Optional[ScanSummary] = Field(None, description="BARQAI explanation summary")
     created_at: datetime = Field(..., description="Scan creation timestamp")

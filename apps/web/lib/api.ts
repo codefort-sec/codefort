@@ -32,6 +32,7 @@ export interface ScanDetail {
   status: string;
   verdict: string;
   risk_score: number | null;
+  risk_level?: string;
   coverage: {
     static_analysis: string;
     dependency_intel: string;
@@ -44,6 +45,27 @@ export interface ScanDetail {
     why_it_matters: string;
     recommended_actions?: string[];
     clean_patch?: string;
+    analysis?: {
+      summary: string;
+      risk_level: string;
+      findings: Array<{
+        title: string;
+        severity: string;
+        evidence_ids: string[];
+        explanation: string;
+        impact: string;
+        recommendation: string;
+      }>;
+      unknowns: string[];
+      remediation_status: string;
+      evidence_verification: string;
+      patch_verification: string;
+    };
+    risk_level?: string;
+    unknowns?: string[];
+    remediation_status?: string;
+    evidence_verification?: string;
+    patch_verification?: string;
   };
   created_at: string;
   completed_at?: string;
@@ -59,6 +81,7 @@ export interface FindingItem {
   file_path?: string;
   line_start?: number;
   line_end?: number;
+  evidence_id?: string;
   recommendation?: string;
   fingerprint: string;
 }

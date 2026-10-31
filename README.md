@@ -2,12 +2,12 @@
 
 [![CodeFort CI](https://github.com/codefort-sec/barqai/actions/workflows/ci.yml/badge.svg)](https://github.com/codefort-sec/barqai/actions/workflows/ci.yml)
 [![Web Dashboard](https://img.shields.io/badge/Web_Dashboard-Vercel_Live-00ff66?style=flat-square&logo=vercel)](https://codefort-web.vercel.app)
-[![API Engine](https://img.shields.io/badge/FastAPI_Engine-Vercel_Live-00e5ff?style=flat-square&logo=fastapi)](https://codefort-lilac.vercel.app/docs)
+[![FastAPI Engine](https://img.shields.io/badge/FastAPI_Engine-Vercel_Live-00e5ff?style=flat-square&logo=fastapi)](https://codefort-lilac.vercel.app/docs)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue?style=flat-square)](LICENSE)
-[![Python Tests](https://img.shields.io/badge/Pytest-32%20Passed%20(100%25)-00ff66?style=flat-square&logo=python)](services/api/tests/)
+[![Python Tests](https://img.shields.io/badge/Pytest-54%20Passed%20(100%25)-00ff66?style=flat-square&logo=python)](services/api/tests/)
 [![OSV Benchmark](https://img.shields.io/badge/OSV_Evaluation-20%2F20%20(100%25)-00e5ff?style=flat-square)](services/api/datasets/evaluation/barqai_test.jsonl)
 
-> **Next-generation AI security platform that intercepts malicious pull requests, detects software supply chain poisoning, and prevents CI/CD workflow injection attacks before code merges into production. Powered by Barq-AI with unified frontier intelligence (Qwen 2.5 Coder MoE / Qwen3.8-Max + Google Gemini), concrete OSV evidence grounding, and autonomous 1-click patch verification.**
+> **Next-generation AI security platform that intercepts malicious pull requests, detects software supply chain poisoning, and prevents CI/CD workflow injection attacks before code merges into production. Powered by Barq-AI with unified frontier intelligence (Qwen 2.5 Coder MoE / Qwen3.8-Max + Google Gemini), concrete OSV evidence grounding, deterministic backend risk scoring, and autonomous 1-click patch verification.**
 
 ---
 

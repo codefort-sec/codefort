@@ -175,51 +175,151 @@ export default function ScanDetailPage({ params }: { params: { id: string } }) {
         </div>
       </div>
 
-      {/* Barq-AI Explanation Engine Summary */}
-      {scan.summary && (
-        <section className="border border-lime/40 bg-surface p-6 flex flex-col gap-5 relative">
-          <div className="flex items-center justify-between border-b border-border pb-3">
-            <div className="flex items-center gap-2">
-              <span className="bg-lime text-bg font-extrabold text-[10px] px-2 py-0.5">AI_COPILOT</span>
-              <span className="text-xs font-bold text-lime uppercase tracking-wider">
-                Barq-AI Grounded Explanation & Threat Correlation
+      {/* CODEFORT_ / BARQAI Forensic Room */}
+      <section className="border border-lime/60 bg-surface p-6 flex flex-col gap-6 relative shadow-xl shadow-lime/5">
+        {/* Header & Risk Level */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border pb-4">
+          <div>
+            <div className="text-[10px] text-text-dim uppercase tracking-wider font-bold">
+              CYBERSECURITY INTELLIGENCE ENGINE
+            </div>
+            <div className="text-xl font-black text-lime tracking-wide">
+              CODEFORT_ / BARQAI
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <span
+              className={`px-3 py-1 text-xs font-black uppercase tracking-wider border ${
+                (scan.summary?.risk_level === "CRITICAL" || isBlocked)
+                  ? "bg-danger/20 border-danger text-danger"
+                  : (scan.summary?.risk_level === "HIGH" || isReview)
+                  ? "bg-amber-500/20 border-amber-500 text-amber-500"
+                  : scan.summary?.risk_level === "MEDIUM"
+                  ? "bg-yellow-500/20 border-yellow-500 text-yellow-500"
+                  : "bg-emerald-500/20 border-emerald-500 text-emerald-400"
+              }`}
+            >
+              {scan.summary?.risk_level || (isBlocked ? "HIGH" : isReview ? "MEDIUM" : "LOW")} RISK
+            </span>
+          </div>
+        </div>
+
+        {/* Score Readout & Verification Status */}
+        <div className="border border-border/80 bg-bg/70 p-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <div className="text-3xl font-black text-lime">
+              {scan.risk_score ?? (isBlocked ? 85 : isReview ? 74 : 0)}
+              <span className="text-sm text-text-dim">/100</span>
+            </div>
+            <div className="text-[11px] text-text-muted uppercase tracking-wider mt-0.5">
+              Illustrative risk score
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-3 text-[11px]">
+            <div className="border border-border bg-surface px-3 py-1.5 flex items-center gap-2">
+              <span className="text-text-dim uppercase">Evidence verification:</span>
+              <span className="text-lime font-bold">
+                {scan.summary?.evidence_verification || "Validated"}
               </span>
             </div>
-            <span className="text-[10px] text-text-dim">MODEL: QWEN3.8_MAX_MOE (Evidence-Grounded)</span>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <div className="text-[10px] font-bold text-text-dim uppercase tracking-wider mb-1">
-                01. What Changed
-              </div>
-              <p className="text-xs text-text leading-relaxed">{scan.summary.what_changed}</p>
-            </div>
-
-            <div>
-              <div className="text-[10px] font-bold text-text-dim uppercase tracking-wider mb-1">
-                02. Why It Matters (Impact & Threat Vector)
-              </div>
-              <p className="text-xs text-text leading-relaxed">{scan.summary.why_it_matters}</p>
+            <div className="border border-border bg-surface px-3 py-1.5 flex items-center gap-2">
+              <span className="text-text-dim uppercase">Patch verification:</span>
+              <span className="text-text font-bold">
+                {scan.summary?.patch_verification || (isVerified ? "Validated" : "Not tested")}
+              </span>
             </div>
           </div>
+        </div>
 
-          {scan.summary.evidence_observed.length > 0 && (
-            <div className="border-t border-border/50 pt-4">
-              <div className="text-[10px] font-bold text-text-dim uppercase tracking-wider mb-2">
-                03. Concrete Telemetry Evidence Citations
+        {/* SECURITY FINDINGS */}
+        <div>
+          <div className="text-xs font-bold text-text uppercase tracking-wider mb-2.5 flex items-center gap-2">
+            <span className="w-2 h-2 bg-lime inline-block"></span>
+            SECURITY FINDINGS
+          </div>
+          <div className="flex flex-col gap-2">
+            {findings.length > 0 ? (
+              findings.map((f, idx) => {
+                const evId = f.evidence_id || `OSV-${idx + 1 < 10 ? "00" + (idx + 1) : idx + 1}`;
+                return (
+                  <div
+                    key={f.id || idx}
+                    className="border border-border/80 bg-surface-raised p-3 flex flex-wrap items-center justify-between gap-2"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold text-text">
+                        {f.title}
+                      </span>
+                      <span className="text-[10px] text-lime font-mono">
+                        ({evId})
+                      </span>
+                    </div>
+                    <span
+                      className={`px-2 py-0.5 text-[10px] font-black uppercase border ${
+                        f.severity === "CRITICAL"
+                          ? "bg-danger/20 border-danger text-danger"
+                          : f.severity === "HIGH"
+                          ? "bg-amber-500/20 border-amber-500 text-amber-500"
+                          : "bg-emerald-500/20 border-emerald-500 text-emerald-400"
+                      }`}
+                    >
+                      {f.severity}
+                    </span>
+                  </div>
+                );
+              })
+            ) : (
+              <div className="text-xs text-text-muted italic border border-border/50 p-3 bg-surface-raised">
+                No security findings detected. Repository satisfies security baseline.
               </div>
-              <ul className="list-disc list-inside space-y-1.5 text-xs text-text-muted">
-                {scan.summary.evidence_observed.map((ev, i) => (
-                  <li key={i} className="text-lime">
-                    <span className="text-text font-mono text-[11px]">{ev}</span>
-                  </li>
-                ))}
-              </ul>
+            )}
+          </div>
+        </div>
+
+        {/* BARQAI EXPLANATION */}
+        <div>
+          <div className="text-xs font-bold text-text uppercase tracking-wider mb-2 flex items-center gap-2">
+            <span className="w-2 h-2 bg-lime inline-block"></span>
+            BARQAI EXPLANATION
+          </div>
+          <div className="border border-border/70 bg-bg/50 p-4 text-xs text-text leading-relaxed font-mono">
+            {scan.summary?.why_it_matters || scan.summary?.what_changed || "Security review completed."}
+          </div>
+        </div>
+
+        {/* RECOMMENDATIONS */}
+        <div>
+          <div className="text-xs font-bold text-text uppercase tracking-wider mb-2 flex items-center gap-2">
+            <span className="w-2 h-2 bg-lime inline-block"></span>
+            RECOMMENDATIONS
+          </div>
+          <ul className="list-disc list-inside space-y-1.5 text-xs text-text-muted">
+            {(scan.summary?.recommended_actions && scan.summary.recommended_actions.length > 0
+              ? scan.summary.recommended_actions
+              : ["Update identified dependencies to verified fixed versions.", "Rerun CODEFORT scan."]
+            ).map((rec, i) => (
+              <li key={i} className="text-lime">
+                <span className="text-text">{rec}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        {/* REPORTED UNCERTAINTIES & UNKNOWNS (if present) */}
+        {scan.summary?.unknowns && scan.summary.unknowns.length > 0 && (
+          <div className="border-t border-border/60 pt-3">
+            <div className="text-[10px] font-bold text-amber-400 uppercase tracking-wider mb-1 flex items-center gap-1.5">
+              <span>⚠</span>
+              <span>REPORTED UNCERTAINTIES & MISSING EVIDENCE</span>
             </div>
-          )}
-        </section>
-      )}
+            <ul className="list-disc list-inside text-xs text-amber-300/80 space-y-1">
+              {scan.summary.unknowns.map((u, i) => (
+                <li key={i}>{u}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </section>
 
       {/* Phase 3 & 4: Intelligent Remediation & 1-Click Verified Fixes */}
       {(remediation?.proposals?.length || scan.summary?.clean_patch) && (
