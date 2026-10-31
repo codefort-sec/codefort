@@ -46,7 +46,7 @@ export default function SettingsPage() {
             <h2 className="text-sm font-bold text-text uppercase">Pair CodeFort Guard Extension</h2>
           </div>
           <p className="text-xs text-text-muted leading-relaxed">
-            Generate a short-lived, single-use pairing token to authenticate your CodeFort Guard Chrome extension. Once paired, the extension can query private repository PR scan status and line-level warnings.
+            Generate a short-lived, single-use pairing token to authenticate your CodeFort Guard Chrome or Firefox extension. Once paired, the extension queries repository PR scan status and line-level warnings directly on GitHub.
           </p>
         </div>
 
@@ -87,6 +87,39 @@ export default function SettingsPage() {
               {loading ? "GENERATING TOKEN..." : "GENERATE PAIRING TOKEN ↗"}
             </button>
           )}
+
+          {/* Extension Downloads */}
+          <div className="border-t border-border pt-4 flex flex-col gap-2">
+            <div className="text-[11px] font-bold text-text uppercase">Install CodeFort Guard:</div>
+            <div className="flex flex-wrap gap-3">
+              <a
+                href="https://github.com/codefort-sec/codefort/releases/download/v0.1.2/codefort-guard-chrome-v0.1.2.zip"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="border border-border hover:border-lime text-text hover:text-lime text-xs font-mono px-3 py-2 flex items-center gap-2 transition-colors"
+              >
+                <span>📦 Chrome (.zip)</span>
+                <span>↓</span>
+              </a>
+              <a
+                href="https://github.com/codefort-sec/codefort/releases/download/v0.1.2/codefort-guard-firefox-v0.1.2.xpi"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="border border-border hover:border-lime text-text hover:text-lime text-xs font-mono px-3 py-2 flex items-center gap-2 transition-colors"
+              >
+                <span>🦊 Firefox (.xpi)</span>
+                <span>↓</span>
+              </a>
+              <a
+                href="https://github.com/codefort-sec/codefort/releases/tag/v0.1.2"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="border border-border hover:border-text-dim text-text-dim hover:text-text text-xs font-mono px-3 py-2 flex items-center gap-2 transition-colors"
+              >
+                <span>Release v0.1.2 ↗</span>
+              </a>
+            </div>
+          </div>
         </div>
       </section>
 

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { getStoredConfig, setStoredConfig } from "../shared/storage";
+import { getStoredConfig } from "../shared/storage";
 import {
   ExtensionConfig,
   ExtensionMessage,
@@ -85,14 +85,16 @@ export const App: React.FC = () => {
         ExtensionResponse<{ paired: boolean }>
       >(msg);
 
-      if (res?.success && res.data.paired) {
+      if (!res?.success) {
+        setErrorMsg(res?.error?.message || "Invalid or expired token");
+      } else if (!res.data.paired) {
+        setErrorMsg("Invalid or expired token");
+      } else {
         setPairingToken("");
         await loadConfig();
         if (activePR) {
           fetchStatusForPR(activePR.repo, activePR.pr);
         }
-      } else {
-        setErrorMsg(res?.error?.message || "Invalid or expired token");
       }
     } catch (err: any) {
       setErrorMsg(err.message || "Failed to pair");

@@ -21,7 +21,7 @@ export const Navbar: React.FC = () => {
             /01 DASHBOARD
           </Link>
           <span className="text-text-dim">+</span>
-          <Link href="/scans/scan_123" className="hover:text-lime transition-colors">
+          <Link href="/scans/scan_pr_1" className="hover:text-lime transition-colors">
             /02 SCAN FORENSICS
           </Link>
           <span className="text-text-dim">+</span>

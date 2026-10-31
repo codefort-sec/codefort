@@ -98,8 +98,8 @@ class MockStore:
         self.findings_by_scan[scan_id] = findings
         self.pr_latest_scan[f"{repo}#{pr_number}"] = scan_id
 
-        # Seed Scenario 1: codefort-sec/codefort #1 - Malicious Preinstall Dropper
-        cf_repo = "codefort-sec/codefort"
+        # Seed Scenario 1: codefort-sec/vulnerable-test-repo #1 - Malicious Preinstall Dropper
+        cf_repo = "codefort-sec/vulnerable-test-repo"
         pr1_findings = [
             FindingResponse(
                 id="fnd_101",
@@ -265,11 +265,12 @@ class MockStore:
         self.findings_by_scan["scan_pr_3"] = pr3_findings
         self.pr_latest_scan[f"{cf_repo}#3"] = "scan_pr_3"
 
-        # Seed Scenario 4: codefort-sec/codefort #4 - Clean PR
+        # Seed Scenario 4: codefort-sec/clean-test-repo #1 - Clean PR
+        clean_repo = "codefort-sec/clean-test-repo"
         self.scans["scan_pr_4"] = ScanResponse(
             id="scan_pr_4",
-            repository=cf_repo,
-            pull_request=4,
+            repository=clean_repo,
+            pull_request=1,
             status=ScanStatus.COMPLETED,
             verdict=Verdict.PASS,
             risk_score=0,
@@ -294,15 +295,18 @@ class MockStore:
             completed_at=datetime(2026, 10, 31, 8, 45, 2, tzinfo=timezone.utc),
         )
         self.findings_by_scan["scan_pr_4"] = []
-        self.pr_latest_scan[f"{cf_repo}#4"] = "scan_pr_4"
+        self.pr_latest_scan[f"{clean_repo}#1"] = "scan_pr_4"
 
-        # Map to live test repositories
+        # Map to live test repositories and codefort repo aliases
         vuln_repo = "codefort-sec/vulnerable-test-repo"
-        clean_repo = "codefort-sec/clean-test-repo"
+        codefort_repo = "codefort-sec/codefort"
         self.pr_latest_scan[f"{vuln_repo}#1"] = "scan_pr_1"
         self.pr_latest_scan[f"{vuln_repo}#2"] = "scan_pr_2"
         self.pr_latest_scan[f"{vuln_repo}#3"] = "scan_pr_3"
-        self.pr_latest_scan[f"{clean_repo}#1"] = "scan_pr_4"
+        self.pr_latest_scan[f"{codefort_repo}#1"] = "scan_pr_1"
+        self.pr_latest_scan[f"{codefort_repo}#2"] = "scan_pr_2"
+        self.pr_latest_scan[f"{codefort_repo}#3"] = "scan_pr_3"
+        self.pr_latest_scan[f"{codefort_repo}#4"] = "scan_pr_4"
 
     def get_scan(self, scan_id: str) -> Optional[ScanResponse]:
         return self.scans.get(scan_id)

@@ -46,7 +46,7 @@ export default function HomePage() {
                 href="/settings"
                 className="border border-border hover:border-lime text-text hover:text-lime font-bold text-xs px-5 py-3 tracking-wider uppercase transition-colors"
               >
-                PAIR CHROME GUARD
+                PAIR BROWSER GUARD
               </Link>
             </div>
           </div>
@@ -174,13 +174,13 @@ export default function HomePage() {
         <div className="border border-border bg-surface p-5 flex flex-col justify-between">
           <div>
             <div className="text-[10px] text-lime mb-2">/06 LIVE SCAN FORENSICS</div>
-            <div className="text-sm font-bold text-text uppercase mb-2">Inspect Sample PR #42</div>
+            <div className="text-sm font-bold text-text uppercase mb-2">Inspect Malicious PR #1</div>
             <p className="text-xs text-text-muted mb-4">
               Review suspicious shell script execution, typosquatted dependencies, and BARQAI analysis.
             </p>
           </div>
           <Link
-            href="/scans/scan_123"
+            href="/scans/scan_pr_1"
             className="bg-surface-raised border border-border hover:border-lime text-text hover:text-lime font-bold text-xs py-2 px-3 text-center uppercase tracking-wider"
           >
             OPEN FORENSIC VIEW ↗
