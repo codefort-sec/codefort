@@ -323,6 +323,26 @@ class MockStore:
             return scan
         return None
 
+    def _parse_unified_diff(self, diff_text: str) -> Dict[str, str]:
+        files: Dict[str, str] = {}
+        current_file = None
+        current_lines = []
+
+        for line in diff_text.splitlines():
+            if line.startswith("diff --git a/"):
+                if current_file and current_lines:
+                    files[current_file] = "\n".join(current_lines)
+                parts = line.split(" b/")
+                current_file = parts[1] if len(parts) > 1 else parts[0].replace("diff --git a/", "")
+                current_lines = []
+            elif line.startswith("+") and not line.startswith("+++"):
+                current_lines.append(line[1:])
+
+        if current_file and current_lines:
+            files[current_file] = "\n".join(current_lines)
+
+        return files
+
     async def _resolve_pr_files(self, repository: str, pr_number: int) -> Dict[str, str]:
         import json
         import httpx
@@ -382,16 +402,27 @@ jobs:
 """
                 }
 
-        # 3. For external GitHub repositories, attempt to fetch live PR files from GitHub API
+        # 3. For external GitHub repositories, attempt to fetch live PR diff directly from GitHub (.diff)
         try:
-            import os
-            from app.core.config import settings
-            token = getattr(settings, "GITHUB_TOKEN", None) or os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN")
-            headers = {"Accept": "application/vnd.github.v3+json", "User-Agent": "CodeFort-Scanner"}
-            if token:
-                headers["Authorization"] = f"token {token}"
+            async with httpx.AsyncClient(follow_redirects=True, timeout=8.0) as client:
+                # Primary: Fetch raw pull request diff (bypasses GitHub API rate limits on serverless environments)
+                diff_res = await client.get(
+                    f"https://github.com/{repository}/pull/{pr_number}.diff",
+                    headers={"User-Agent": "CodeFort-Scanner"}
+                )
+                if diff_res.status_code == 200 and diff_res.text.strip():
+                    diff_files = self._parse_unified_diff(diff_res.text)
+                    if diff_files:
+                        return diff_files
 
-            async with httpx.AsyncClient(timeout=5.0) as client:
+                # Secondary: Fallback to GitHub REST API if available
+                import os
+                from app.core.config import settings
+                token = getattr(settings, "GITHUB_TOKEN", None) or os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN")
+                headers = {"Accept": "application/vnd.github.v3+json", "User-Agent": "CodeFort-Scanner"}
+                if token:
+                    headers["Authorization"] = f"token {token}"
+
                 res = await client.get(
                     f"https://api.github.com/repos/{repository}/pulls/{pr_number}/files",
                     headers=headers,
@@ -399,7 +430,6 @@ jobs:
                 if res.status_code == 200:
                     gh_files = res.json()
 
-                    # Prioritize suspicious, script, executable, and config files over static media
                     def file_priority(item: dict) -> int:
                         fn = item.get("filename", "").lower()
                         if fn.endswith((".jpg", ".jpeg", ".png", ".gif", ".ico", ".webp", ".svg", ".pdf")):
@@ -422,7 +452,6 @@ jobs:
                             try:
                                 raw_res = await client.get(raw_url, headers=headers)
                                 if raw_res.status_code == 200:
-                                    # Decode first 64KB
                                     content_text = raw_res.content[:65536].decode("utf-8", errors="replace")
                                     result_files[filename] = content_text
                             except Exception:
