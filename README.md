@@ -4,7 +4,7 @@
 [![Web Dashboard](https://img.shields.io/badge/Web_Dashboard-Vercel_Live-00ff66?style=flat-square&logo=vercel)](https://codefort-web.vercel.app)
 [![FastAPI Engine](https://img.shields.io/badge/FastAPI_Engine-Vercel_Live-00e5ff?style=flat-square&logo=fastapi)](https://codefort-lilac.vercel.app/docs)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue?style=flat-square)](LICENSE)
-[![Python Tests](https://img.shields.io/badge/Pytest-54%20Passed%20(100%25)-00ff66?style=flat-square&logo=python)](services/api/tests/)
+[![Python Tests](https://img.shields.io/badge/Pytest-63%20Passed%20(100%25)-00ff66?style=flat-square&logo=python)](services/api/tests/)
 [![OSV Benchmark](https://img.shields.io/badge/OSV_Evaluation-20%2F20%20(100%25)-00e5ff?style=flat-square)](services/api/datasets/evaluation/barqai_test.jsonl)
 
 > **Next-generation AI security platform that intercepts malicious pull requests, detects software supply chain poisoning, and prevents CI/CD workflow injection attacks before code merges into production. Powered by Barq-AI with unified frontier intelligence (Qwen 2.5 Coder MoE / Qwen3.8-Max + Google Gemini), concrete OSV evidence grounding, deterministic backend risk scoring, and autonomous 1-click patch verification.**
@@ -204,6 +204,28 @@ flowchart TD
    - Applies unified git diff hunks in-memory with automatic JSON/YAML syntax cleanup.
    - Re-scans patched files across static, dependency, and workflow linters.
    - Verifies target exploit elimination with 0 new regressions.
+
+6. **AI Remediation Engine & Patch Studio (`RemediationEngine`)**:
+   - Uses Qwen / frontier LLM with prompt instruction guardrails (`REMEDIATION_PROMPT`) to generate minimal, non-breaking security corrections.
+   - Validates unified diff syntax and enforces file modification boundary checks (rejects path traversal `../`, `.env`, `.git/`).
+   - Conducts isolated in-memory sandbox testing (syntax validation, simulated unit tests, Semgrep/static re-scans, OSV dependency checks).
+   - Strict decoupling: Passing sandbox tests sets verification checklist to `"Passed"`, but developer approval is explicitly required via `POST /api/v1/remediation/{id}/approve`.
+   - Powers the interactive **`CODEFORT_ / PATCH STUDIO`** in the dashboard with side-by-side code diffs, advisory disclaimers, and interactive approval.
+
+---
+
+## 🛠️ Phase 3 Intelligent Remediation Endpoints
+
+| Endpoint | Method | Purpose |
+| :--- | :---: | :--- |
+| `/api/v1/remediation/generate` | `POST` | Request an AI-synthesized fix for a detected security finding |
+| `/api/v1/remediation/validate` | `POST` | Validate unified diff syntax and ensure modified files stay within permitted scope |
+| `/api/v1/remediation/test` | `POST` | Run automated tests and re-scans in an isolated in-memory sandbox |
+| `/api/v1/remediation/{id}` | `GET` | Retrieve candidate patch status, verification checklist, and approval state |
+| `/api/v1/remediation/{id}/approve` | `POST` | Record explicit developer approval (approval is never granted automatically) |
+| `/api/v1/remediation/{scan_id}/patch` | `GET` | Get unified diff patch and side-by-side proposals for a scan |
+| `/api/v1/remediation/{scan_id}/verify` | `POST` | Run independent re-scan verification against exploit regressions |
+| `/api/v1/remediation/{scan_id}/apply` | `POST` | Stage verified patch to pull request branch |
 
 ---
 

@@ -254,6 +254,7 @@ class SandboxRunner:
 
 
 from app.services.engines.patch_verifier import PatchVerifier, patch_verifier
+from app.services.engines.remediation_engine import RemediationEngine, remediation_engine, REMEDIATION_PROMPT
 
 # Singleton instances
 static_analyzer = StaticAnalyzer()
@@ -269,6 +270,7 @@ __all__ = [
     "barqai_engine",
     "orchestrator",
     "patch_verifier",
+    "remediation_engine",
     "StaticAnalyzer",
     "DependencyIntelligence",
     "WorkflowLinter",
@@ -276,5 +278,7 @@ __all__ = [
     "BarqAIEngine",
     "ScanOrchestrator",
     "PatchVerifier",
+    "RemediationEngine",
+    "REMEDIATION_PROMPT",
 ]
 

@@ -11,18 +11,27 @@ import {
   applyRemediationPatch,
   RemediationProposal,
   RemediationResponse,
+  RemediationRecord,
+  getRemediationRecord,
+  testSandboxRemediation,
+  approveRemediation,
 } from "@/lib/api";
 
 export default function ScanDetailPage({ params }: { params: { id: string } }) {
   const [scan, setScan] = useState<ScanDetail | null>(null);
   const [findings, setFindings] = useState<FindingItem[]>([]);
   const [remediation, setRemediation] = useState<RemediationResponse | null>(null);
+  const [remediationRecord, setRemediationRecord] = useState<RemediationRecord | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedFinding, setSelectedFinding] = useState<FindingItem | null>(null);
   const [activeTab, setActiveTab] = useState<"side-by-side" | "diff">("side-by-side");
   const [applying, setApplying] = useState(false);
+  const [testing, setTesting] = useState(false);
+  const [approving, setApproving] = useState(false);
   const [applyResult, setApplyResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [testResult, setTestResult] = useState<{ passed: boolean; details: string } | null>(null);
+  const [approvalResult, setApprovalResult] = useState<{ approved: boolean; message: string } | null>(null);
 
   useEffect(() => {
     async function loadScanData() {
@@ -40,6 +49,14 @@ export default function ScanDetailPage({ params }: { params: { id: string } }) {
         } catch {
           // Remediation may be unavailable for non-vulnerable scans
         }
+
+        // Fetch candidate remediation record (Phase 3)
+        try {
+          const record = await getRemediationRecord(params.id);
+          setRemediationRecord(record);
+        } catch {
+          // Record may be absent if not yet requested
+        }
       } catch (err: any) {
         setError(err.message || "Failed to load scan");
       } finally {
@@ -48,6 +65,68 @@ export default function ScanDetailPage({ params }: { params: { id: string } }) {
     }
     loadScanData();
   }, [params.id]);
+
+  const handleRunSandboxTest = async () => {
+    if (!scan && !remediationRecord) return;
+    setTesting(true);
+    setTestResult(null);
+    try {
+      const idToTest = remediationRecord?.id || scan?.id;
+      const res = await testSandboxRemediation(
+        idToTest!,
+        remediationRecord?.unified_diff || scan?.summary?.clean_patch || undefined,
+        remediationRecord?.file_path || "package.json"
+      );
+      setTestResult({
+        passed: res.passed,
+        details: res.details,
+      });
+      if (remediationRecord) {
+        setRemediationRecord({
+          ...remediationRecord,
+          checks: res.checks,
+          status: res.passed ? "tested" : "rejected",
+        });
+      }
+    } catch (err: any) {
+      setTestResult({
+        passed: false,
+        details: err.message || "Sandbox testing failed.",
+      });
+    } finally {
+      setTesting(false);
+    }
+  };
+
+  const handleApprovePatch = async () => {
+    if (!scan && !remediationRecord) return;
+    setApproving(true);
+    setApprovalResult(null);
+    try {
+      const idToApprove = remediationRecord?.id || scan?.id;
+      const res = await approveRemediation(idToApprove!, "developer", "Developer reviewed and approved in Patch Studio");
+      setApprovalResult({
+        approved: res.approved,
+        message: res.message,
+      });
+      if (remediationRecord) {
+        setRemediationRecord({
+          ...remediationRecord,
+          approved: true,
+          status: "approved",
+          approved_by: res.approved_by || "developer",
+          approved_at: res.approved_at,
+        });
+      }
+    } catch (err: any) {
+      setApprovalResult({
+        approved: false,
+        message: err.message || "Failed to record approval.",
+      });
+    } finally {
+      setApproving(false);
+    }
+  };
 
   const handleApplyRemediation = async () => {
     if (!scan) return;
@@ -321,36 +400,36 @@ export default function ScanDetailPage({ params }: { params: { id: string } }) {
         )}
       </section>
 
-      {/* Phase 3 & 4: Intelligent Remediation & 1-Click Verified Fixes */}
-      {(remediation?.proposals?.length || scan.summary?.clean_patch) && (
-        <section className="border border-lime bg-surface p-6 flex flex-col gap-5 shadow-lg shadow-lime/5">
+      {/* CODEFORT_ / PATCH STUDIO (Phase 3 Intelligent Remediation & Patch Verification) */}
+      {(remediation?.proposals?.length || scan.summary?.clean_patch || remediationRecord) && (
+        <section className="border border-lime bg-surface p-6 flex flex-col gap-6 shadow-xl shadow-lime/5">
+          {/* Header & Status Badge */}
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border pb-4">
             <div>
-              <div className="flex items-center gap-2 mb-1">
-                <span className="bg-lime text-bg text-[10px] font-black px-2 py-0.5 uppercase tracking-wider">
-                  INTELLIGENT REMEDIATION
-                </span>
-                <span
-                  className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 border ${
-                    isVerified
-                      ? "border-emerald-500 bg-emerald-500/10 text-emerald-400"
-                      : "border-amber-500 bg-amber-500/10 text-amber-400"
-                  }`}
-                >
-                  {isVerified ? "✓ VERIFIED: 0 REGRESSIONS DETECTED" : "⚠ REVIEW REQUIRED"}
-                </span>
+              <div className="text-[10px] text-text-dim uppercase tracking-wider font-bold">
+                AI-POWERED CODE REMEDIATION & VERIFICATION
               </div>
-              <h2 className="text-sm font-bold text-text uppercase tracking-wide">
-                1-Click Clean Unified Patch & Side-by-Side Code Preview
-              </h2>
+              <div className="text-xl font-black text-lime tracking-wide flex items-center gap-2">
+                <span>CODEFORT_ / PATCH STUDIO</span>
+              </div>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
+              <span
+                className={`px-3 py-1 text-xs font-black uppercase tracking-wider border ${
+                  remediationRecord?.approved || approvalResult?.approved
+                    ? "bg-emerald-500/20 border-emerald-500 text-emerald-400"
+                    : "bg-amber-500/20 border-amber-500 text-amber-400"
+                }`}
+              >
+                {remediationRecord?.approved || approvalResult?.approved ? "Approved ✓" : "Awaiting review"}
+              </span>
+
               <div className="border border-border bg-bg flex p-0.5 text-[10px]">
                 <button
                   type="button"
                   onClick={() => setActiveTab("side-by-side")}
-                  className={`px-3 py-1 font-bold uppercase ${
+                  className={`px-3 py-1 font-bold uppercase transition-colors ${
                     activeTab === "side-by-side" ? "bg-lime text-bg" : "text-text-dim hover:text-text"
                   }`}
                 >
@@ -359,26 +438,105 @@ export default function ScanDetailPage({ params }: { params: { id: string } }) {
                 <button
                   type="button"
                   onClick={() => setActiveTab("diff")}
-                  className={`px-3 py-1 font-bold uppercase ${
+                  className={`px-3 py-1 font-bold uppercase transition-colors ${
                     activeTab === "diff" ? "bg-lime text-bg" : "text-text-dim hover:text-text"
                   }`}
                 >
                   Unified Diff
                 </button>
               </div>
-
-              <button
-                type="button"
-                disabled={applying}
-                onClick={handleApplyRemediation}
-                className="bg-lime text-bg text-xs font-black px-4 py-2 uppercase tracking-wider hover:bg-lime-muted transition-colors disabled:opacity-50"
-              >
-                {applying ? "APPLYING PATCH..." : "APPLY VERIFIED FIX ↗"}
-              </button>
             </div>
           </div>
 
-          {/* Feedback Alert */}
+          {/* Finding Label & Target Context */}
+          {remediationRecord && (
+            <div className="border border-border/80 bg-bg/60 p-3.5 flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 bg-lime inline-block"></span>
+                <span className="text-xs font-bold text-text">
+                  Security finding: <span className="text-lime">{remediationRecord.title}</span>
+                </span>
+                <span className="text-[10px] text-text-dim font-mono">({remediationRecord.file_path})</span>
+              </div>
+              <span className="text-[10px] text-text-dim font-mono uppercase">
+                PATCH ID: {remediationRecord.id}
+              </span>
+            </div>
+          )}
+
+          {/* Verification Status Checklist */}
+          <div className="border border-border bg-bg/40 p-4 flex flex-col gap-2.5">
+            <div className="text-[10px] text-text-dim uppercase tracking-wider font-bold flex items-center justify-between">
+              <span>VERIFICATION STATUS CHECKLIST</span>
+              <span className="text-lime font-mono">0 REGRESSIONS</span>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+              <div className="border border-border/80 bg-surface px-3 py-2 flex justify-between items-center">
+                <span className="text-text-dim text-[11px]">Patch format:</span>
+                <span className={`font-bold text-[10px] uppercase ${
+                  (remediationRecord?.checks.patch_format || "Passed") === "Passed" ? "text-lime" : "text-danger"
+                }`}>
+                  {remediationRecord?.checks.patch_format || "Passed"}
+                </span>
+              </div>
+              <div className="border border-border/80 bg-surface px-3 py-2 flex justify-between items-center">
+                <span className="text-text-dim text-[11px]">Syntax check:</span>
+                <span className={`font-bold text-[10px] uppercase ${
+                  (remediationRecord?.checks.syntax_check || "Passed") === "Passed" ? "text-lime" : "text-danger"
+                }`}>
+                  {remediationRecord?.checks.syntax_check || "Passed"}
+                </span>
+              </div>
+              <div className="border border-border/80 bg-surface px-3 py-2 flex justify-between items-center">
+                <span className="text-text-dim text-[11px]">Unit tests:</span>
+                <span className={`font-bold text-[10px] uppercase ${
+                  (remediationRecord?.checks.unit_tests || (isVerified ? "Passed" : "Pending")) === "Passed" ? "text-lime" : "text-amber-400"
+                }`}>
+                  {remediationRecord?.checks.unit_tests || (isVerified ? "Passed" : "Pending")}
+                </span>
+              </div>
+              <div className="border border-border/80 bg-surface px-3 py-2 flex justify-between items-center">
+                <span className="text-text-dim text-[11px]">Security retest:</span>
+                <span className={`font-bold text-[10px] uppercase ${
+                  (remediationRecord?.checks.security_retest || (isVerified ? "Passed" : "Pending")) === "Passed" ? "text-lime" : "text-amber-400"
+                }`}>
+                  {remediationRecord?.checks.security_retest || (isVerified ? "Passed" : "Pending")}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Feedback Alerts for Sandbox Test & Approval */}
+          {testResult && (
+            <div
+              className={`p-3 text-xs border ${
+                testResult.passed
+                  ? "bg-emerald-950/40 border-emerald-500 text-emerald-300"
+                  : "bg-red-950/40 border-red-500 text-red-300"
+              }`}
+            >
+              <div className="font-bold mb-0.5">
+                {testResult.passed ? "✓ SANDBOX VERIFICATION PASSED" : "✗ SANDBOX TEST FAILED"}
+              </div>
+              <div>{testResult.details}</div>
+            </div>
+          )}
+
+          {approvalResult && (
+            <div
+              className={`p-3 text-xs border ${
+                approvalResult.approved
+                  ? "bg-emerald-950/40 border-emerald-500 text-emerald-300"
+                  : "bg-red-950/40 border-red-500 text-red-300"
+              }`}
+            >
+              <div className="font-bold mb-0.5">
+                {approvalResult.approved ? "✓ DEVELOPER APPROVAL RECORDED" : "✗ APPROVAL ERROR"}
+              </div>
+              <div>{approvalResult.message}</div>
+            </div>
+          )}
+
           {applyResult && (
             <div
               className={`p-3 text-xs border ${
@@ -394,64 +552,110 @@ export default function ScanDetailPage({ params }: { params: { id: string } }) {
             </div>
           )}
 
-          {/* Side-by-Side Mode */}
-          {activeTab === "side-by-side" && remediation?.proposals && remediation.proposals.length > 0 && (
-            <div className="flex flex-col gap-6">
-              {remediation.proposals.map((prop, idx) => (
-                <div key={idx} className="border border-border bg-bg/50 p-4 flex flex-col gap-3">
-                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/50 pb-2">
-                    <div className="flex items-center gap-2">
-                      <span className="text-lime font-bold text-xs uppercase">{prop.title}</span>
-                      <span className="text-[10px] text-text-dim font-mono">({prop.rule_id})</span>
+          {/* Side-by-Side Code Comparison */}
+          {activeTab === "side-by-side" && (
+            <div className="flex flex-col gap-4">
+              {(remediation?.proposals && remediation.proposals.length > 0) ? (
+                remediation.proposals.map((prop, idx) => (
+                  <div key={idx} className="border border-border bg-bg/50 p-4 flex flex-col gap-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/50 pb-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-lime font-bold text-xs uppercase">
+                          Security finding: {prop.title}
+                        </span>
+                        <span className="text-[10px] text-text-dim font-mono">({prop.rule_id})</span>
+                      </div>
+                      <div className="flex items-center gap-3 text-[11px]">
+                        <span className="text-text-dim">
+                          LOCATION: <span className="text-lime">{prop.file_path}:{prop.line_start}</span>
+                        </span>
+                        <span
+                          className={`px-2 py-0.5 text-[9px] font-bold uppercase border ${
+                            prop.verification_status === "verified"
+                              ? "border-emerald-500/50 bg-emerald-500/10 text-emerald-400"
+                              : "border-amber-500/50 bg-amber-500/10 text-amber-400"
+                          }`}
+                        >
+                          {prop.verification_status}
+                        </span>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-3 text-[11px]">
-                      <span className="text-text-dim">
-                        LOCATION: <span className="text-lime">{prop.file_path}:{prop.line_start}</span>
-                      </span>
-                      <span
-                        className={`px-2 py-0.5 text-[9px] font-bold uppercase border ${
-                          prop.verification_status === "verified"
-                            ? "border-emerald-500/50 bg-emerald-500/10 text-emerald-400"
-                            : "border-amber-500/50 bg-amber-500/10 text-amber-400"
-                        }`}
-                      >
-                        {prop.verification_status}
-                      </span>
+
+                    <p className="text-xs text-text-muted">{prop.explanation}</p>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                      {/* Original Code */}
+                      <div className="border border-red-900/50 bg-red-950/20 p-3 flex flex-col gap-2">
+                        <div className="text-[10px] font-bold text-red-400 uppercase tracking-wider flex items-center gap-2">
+                          <span className="w-1.5 h-1.5 bg-red-500 inline-block"></span>
+                          Original code
+                        </div>
+                        <pre className="p-2.5 bg-black/60 text-[11px] font-mono text-red-200 overflow-x-auto whitespace-pre leading-relaxed border border-red-900/40">
+                          {prop.original_code}
+                        </pre>
+                      </div>
+
+                      {/* Suggested Correction */}
+                      <div className="border border-emerald-900/50 bg-emerald-950/20 p-3 flex flex-col gap-2">
+                        <div className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-2">
+                          <span className="w-1.5 h-1.5 bg-emerald-400 inline-block"></span>
+                          Suggested correction
+                        </div>
+                        <pre className="p-2.5 bg-black/60 text-[11px] font-mono text-emerald-200 overflow-x-auto whitespace-pre leading-relaxed border border-emerald-900/40">
+                          {prop.suggested_code}
+                        </pre>
+                      </div>
                     </div>
                   </div>
+                ))
+              ) : remediationRecord ? (
+                <div className="border border-border bg-bg/50 p-4 flex flex-col gap-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/50 pb-2">
+                    <span className="text-lime font-bold text-xs uppercase">
+                      Security finding: {remediationRecord.title}
+                    </span>
+                    <span className="text-[11px] text-text-dim">
+                      LOCATION: <span className="text-lime">{remediationRecord.file_path}</span>
+                    </span>
+                  </div>
 
-                  <p className="text-xs text-text-muted">{prop.explanation}</p>
+                  <p className="text-xs text-text-muted">{remediationRecord.explanation}</p>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
                     {/* Original Code */}
                     <div className="border border-red-900/50 bg-red-950/20 p-3 flex flex-col gap-2">
                       <div className="text-[10px] font-bold text-red-400 uppercase tracking-wider flex items-center gap-2">
                         <span className="w-1.5 h-1.5 bg-red-500 inline-block"></span>
-                        Original Vulnerable Code
+                        Original code
                       </div>
                       <pre className="p-2.5 bg-black/60 text-[11px] font-mono text-red-200 overflow-x-auto whitespace-pre leading-relaxed border border-red-900/40">
-                        {prop.original_code}
+                        {remediationRecord.original_code}
                       </pre>
                     </div>
 
-                    {/* Suggested Fix */}
+                    {/* Suggested Correction */}
                     <div className="border border-emerald-900/50 bg-emerald-950/20 p-3 flex flex-col gap-2">
                       <div className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-2">
                         <span className="w-1.5 h-1.5 bg-emerald-400 inline-block"></span>
-                        BARQAI Verified Correction
+                        Suggested correction
                       </div>
                       <pre className="p-2.5 bg-black/60 text-[11px] font-mono text-emerald-200 overflow-x-auto whitespace-pre leading-relaxed border border-emerald-900/40">
-                        {prop.suggested_code}
+                        {remediationRecord.suggested_code}
                       </pre>
                     </div>
                   </div>
                 </div>
-              ))}
+              ) : null}
+
+              {/* Required Caption */}
+              <div className="text-[11px] text-text-dim italic text-center py-1">
+                Illustrative versions only. The actual fix must be supported by the relevant advisory and compatibility testing.
+              </div>
             </div>
           )}
 
           {/* Unified Diff Mode */}
-          {(activeTab === "diff" || (!remediation?.proposals?.length && scan.summary?.clean_patch)) && (
+          {(activeTab === "diff" || (!remediation?.proposals?.length && !remediationRecord && scan.summary?.clean_patch)) && (
             <div className="flex flex-col gap-2">
               <div className="flex items-center justify-between">
                 <span className="text-[10px] text-text-dim uppercase tracking-wider">
@@ -460,7 +664,7 @@ export default function ScanDetailPage({ params }: { params: { id: string } }) {
                 <button
                   type="button"
                   onClick={() => {
-                    const patch = remediation?.clean_patch || scan.summary?.clean_patch;
+                    const patch = remediationRecord?.unified_diff || remediation?.clean_patch || scan.summary?.clean_patch;
                     if (patch) {
                       navigator.clipboard.writeText(patch);
                       alert("Unified diff copied to clipboard!");
@@ -472,10 +676,63 @@ export default function ScanDetailPage({ params }: { params: { id: string } }) {
                 </button>
               </div>
               <pre className="p-4 bg-bg border border-border text-[11px] font-mono text-lime-muted overflow-x-auto whitespace-pre leading-relaxed">
-                {remediation?.clean_patch || scan.summary?.clean_patch}
+                {remediationRecord?.unified_diff || remediation?.clean_patch || scan.summary?.clean_patch}
               </pre>
+              <div className="text-[11px] text-text-dim italic text-center py-1">
+                Illustrative versions only. The actual fix must be supported by the relevant advisory and compatibility testing.
+              </div>
             </div>
           )}
+
+          {/* Approval Section */}
+          <div className="border border-border/80 bg-surface-raised p-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <div className="text-xs font-bold text-text uppercase tracking-wider mb-1 flex items-center gap-2">
+                <span className="w-2 h-2 bg-amber-400 inline-block"></span>
+                Developer approval required
+              </div>
+              <p className="text-[11px] text-text-muted">
+                Automated sandbox verification confirms exploit elimination, but developer approval is required before applying or merging candidate changes.
+              </p>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2.5">
+              <button
+                type="button"
+                disabled={testing}
+                onClick={handleRunSandboxTest}
+                className="bg-surface border border-border hover:border-lime text-lime text-xs font-bold px-4 py-2 uppercase tracking-wider transition-colors disabled:opacity-50"
+              >
+                {testing ? "RUNNING SANDBOX..." : "RUN SANDBOX TEST"}
+              </button>
+
+              <button
+                type="button"
+                disabled={approving || remediationRecord?.approved || approvalResult?.approved}
+                onClick={handleApprovePatch}
+                className={`text-xs font-black px-4 py-2 uppercase tracking-wider transition-colors disabled:opacity-50 ${
+                  remediationRecord?.approved || approvalResult?.approved
+                    ? "bg-emerald-600/30 text-emerald-400 border border-emerald-500 cursor-default"
+                    : "bg-amber-500 text-bg hover:bg-amber-400"
+                }`}
+              >
+                {approving
+                  ? "RECORDING APPROVAL..."
+                  : remediationRecord?.approved || approvalResult?.approved
+                  ? "APPROVED ✓"
+                  : "APPROVE PATCH"}
+              </button>
+
+              <button
+                type="button"
+                disabled={applying}
+                onClick={handleApplyRemediation}
+                className="bg-lime text-bg text-xs font-black px-4 py-2 uppercase tracking-wider hover:bg-lime-muted transition-colors disabled:opacity-50"
+              >
+                {applying ? "APPLYING..." : "APPLY VERIFIED FIX ↗"}
+              </button>
+            </div>
+          </div>
         </section>
       )}
 

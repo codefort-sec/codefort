@@ -61,20 +61,40 @@ class PatchVerifier:
                 # Replace with additions if any pending
                 if hunk_additions:
                     for add in hunk_additions:
-                        new_lines.append(add)
+                        add_text = add
+                        if stripped.endswith(",") and not add_text.strip().endswith(",") and not add_text.strip().endswith(("{", "[")):
+                            add_text = add_text + ","
+                        new_lines.append(add_text)
                     hunk_additions = []
                 continue
             new_lines.append(line)
 
         # Append remaining additions if any
-        for add in hunk_additions:
-            new_lines.append(add)
+        if hunk_additions:
+            if new_lines and new_lines[-1].strip() == "}":
+                # Ensure the line before additions has a comma
+                for i in range(len(new_lines) - 2, -1, -1):
+                    if new_lines[i].strip() and not new_lines[i].strip().endswith(("{", "[")):
+                        if not new_lines[i].strip().endswith(","):
+                            new_lines[i] = new_lines[i] + ","
+                        break
+                new_lines = new_lines[:-1] + hunk_additions + [new_lines[-1]]
+            else:
+                for add in hunk_additions:
+                    new_lines.append(add)
 
         result = "\n".join(new_lines)
 
-        # Ensure valid JSON trailing comma formatting when lines are removed
+        # Ensure valid JSON formatting when lines are removed or added
         if '"' in result and ("{" in result or "[" in result):
+            # Trailing comma before closing brace/bracket
             result = re.sub(r",\s*(\r?\n\s*[\]}])", r"\1", result)
+            # Missing comma between consecutive JSON property lines: "val"\n  "key":
+            result = re.sub(
+                r'("[^"]+"\s*:\s*(?:"[^"]*"|\d+|true|false|null|\]|\}))(?<!,)(\r?\n\s*"[^"]+"\s*:)',
+                r'\1,\2',
+                result,
+            )
 
         return result
 

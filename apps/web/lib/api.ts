@@ -177,3 +177,82 @@ export async function applyRemediationPatch(
   });
 }
 
+export interface RemediationChecks {
+  patch_format: "Passed" | "Failed";
+  file_validation: "Passed" | "Failed";
+  syntax_check: "Passed" | "Failed";
+  unit_tests: "Passed" | "Pending" | "Failed";
+  security_retest: "Passed" | "Pending" | "Failed";
+  dependency_check: "Passed" | "Failed";
+}
+
+export interface RemediationRecord {
+  id: string;
+  finding_id: string;
+  scan_id?: string | null;
+  title: string;
+  file_path: string;
+  original_issue: string;
+  proposed_solution: string;
+  original_code: string;
+  suggested_code: string;
+  unified_diff: string;
+  explanation: string;
+  potential_limitations: string;
+  status: "awaiting_review" | "testing" | "tested" | "approved" | "rejected";
+  approved: boolean;
+  approved_by?: string | null;
+  approved_at?: string | null;
+  checks: RemediationChecks;
+  created_at: string;
+}
+
+export interface RemediationApproveResponse {
+  id: string;
+  approved: boolean;
+  status: string;
+  message: string;
+  approved_by?: string | null;
+  approved_at?: string | null;
+}
+
+export async function getRemediationRecord(id: string): Promise<RemediationRecord> {
+  return apiFetch<RemediationRecord>(`/api/v1/remediation/${id}`);
+}
+
+export async function testSandboxRemediation(
+  patchId: string,
+  unifiedDiff?: string,
+  filePath?: string
+): Promise<{
+  patch_id: string;
+  passed: boolean;
+  status: string;
+  checks: RemediationChecks;
+  details: string;
+  regressions_count: number;
+  remaining_findings_count: number;
+}> {
+  return apiFetch(`/api/v1/remediation/test`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      patch_id: patchId,
+      unified_diff: unifiedDiff,
+      file_path: filePath,
+    }),
+  });
+}
+
+export async function approveRemediation(
+  id: string,
+  developerId: string = "developer",
+  comment?: string
+): Promise<RemediationApproveResponse> {
+  return apiFetch<RemediationApproveResponse>(`/api/v1/remediation/${id}/approve`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ developer_id: developerId, comment }),
+  });
+}
+
