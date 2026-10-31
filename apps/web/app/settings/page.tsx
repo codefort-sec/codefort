@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import Link from "next/link";
 import { createPairingToken } from "@/lib/api";
 
 export default function SettingsPage() {
@@ -90,8 +91,20 @@ export default function SettingsPage() {
 
           {/* Extension Downloads */}
           <div className="border-t border-border pt-4 flex flex-col gap-2">
-            <div className="text-[11px] font-bold text-text uppercase">Install CodeFort Guard:</div>
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold text-text uppercase">Install CodeFort Guard:</span>
+              <Link href="/extension" className="text-lime text-[11px] hover:underline font-bold uppercase">
+                Step-by-step Guide ↗
+              </Link>
+            </div>
             <div className="flex flex-wrap gap-3">
+              <Link
+                href="/extension"
+                className="bg-lime hover:bg-lime-muted text-bg font-extrabold text-xs px-3.5 py-2 uppercase tracking-wider flex items-center gap-1.5 transition-colors"
+              >
+                <span>Interactive Setup Guide</span>
+                <span>↗</span>
+              </Link>
               <a
                 href="https://github.com/codefort-sec/codefort/releases/download/v0.1.2/codefort-guard-chrome-v0.1.2.zip"
                 target="_blank"

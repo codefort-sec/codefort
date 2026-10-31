@@ -126,9 +126,11 @@ export const BadgeOverlay: React.FC<BadgeOverlayProps> = ({
               alignItems: "center",
             }}
           >
-            <span style={{ fontSize: "10px", color: "#686d64" }}>CodeFort v0.1.1</span>
+            <span style={{ fontSize: "10px", color: "#686d64" }}>CodeFort Guard v0.1.2</span>
             <a
-              href="https://codefort-web.vercel.app/dashboard"
+              href={`https://codefort-web.vercel.app/dashboard?repo=${encodeURIComponent(
+                status.repository
+              )}`}
               target="_blank"
               rel="noreferrer"
               style={{

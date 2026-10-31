@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { apiFetch, triggerPRScan } from "@/lib/api";
 
 interface RepoItem {
@@ -26,12 +27,21 @@ interface PRItem {
   };
 }
 
-export default function DashboardPage() {
+function DashboardContent() {
+  const searchParams = useSearchParams();
+  const repoQuery = searchParams.get("repo");
+
   const [repos, setRepos] = useState<RepoItem[]>([]);
-  const [selectedRepo, setSelectedRepo] = useState<string>("codefort-sec/vulnerable-test-repo");
+  const [selectedRepo, setSelectedRepo] = useState<string>(
+    repoQuery || "codefort-sec/vulnerable-test-repo"
+  );
   const [prs, setPrs] = useState<PRItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [scanningPRs, setScanningPRs] = useState<Record<number, boolean>>({});
+
+  // Quick PR scan input
+  const [customPRInput, setCustomPRInput] = useState("");
+  const [customScanning, setCustomScanning] = useState(false);
 
   // Connect Repository Modal State
   const [showConnectModal, setShowConnectModal] = useState(false);
@@ -49,9 +59,16 @@ export default function DashboardPage() {
         const repoList = await apiFetch<RepoItem[]>("/api/v1/repositories");
         setRepos(repoList);
         if (repoList.length > 0) {
-          const hasVuln = repoList.some((r) => r.full_name === "codefort-sec/vulnerable-test-repo");
-          const defaultRepo = hasVuln ? "codefort-sec/vulnerable-test-repo" : repoList[0].full_name;
-          setSelectedRepo(defaultRepo);
+          if (repoQuery && repoList.some((r) => r.full_name.toLowerCase() === repoQuery.toLowerCase())) {
+            const found = repoList.find((r) => r.full_name.toLowerCase() === repoQuery.toLowerCase());
+            if (found) setSelectedRepo(found.full_name);
+          } else if (repoQuery) {
+            setSelectedRepo(repoQuery);
+          } else {
+            const hasVuln = repoList.some((r) => r.full_name === "codefort-sec/vulnerable-test-repo");
+            const defaultRepo = hasVuln ? "codefort-sec/vulnerable-test-repo" : repoList[0].full_name;
+            setSelectedRepo(defaultRepo);
+          }
         }
       } catch (err) {
         console.error("Failed to load repositories:", err);
@@ -60,7 +77,7 @@ export default function DashboardPage() {
       }
     }
     loadRepos();
-  }, []);
+  }, [repoQuery]);
 
   useEffect(() => {
     if (!selectedRepo) {
@@ -137,6 +154,19 @@ export default function DashboardPage() {
     }
   }
 
+  async function handleCustomScan(e: React.FormEvent) {
+    e.preventDefault();
+    const prNum = parseInt(customPRInput.trim(), 10);
+    if (isNaN(prNum) || prNum < 1 || !selectedRepo) return;
+    setCustomScanning(true);
+    try {
+      await handleTriggerScan(prNum);
+      setCustomPRInput("");
+    } finally {
+      setCustomScanning(false);
+    }
+  }
+
   async function handleConnectRepo(e: React.FormEvent) {
     e.preventDefault();
     if (!newRepoName.trim()) {
@@ -194,6 +224,12 @@ export default function DashboardPage() {
           <h1 className="text-2xl font-black text-text uppercase">REPOSITORIES & PULL REQUESTS</h1>
         </div>
         <div className="flex items-center gap-3">
+          <Link
+            href="/extension"
+            className="border border-lime/60 hover:border-lime text-lime text-xs px-3 py-2 uppercase font-bold transition-colors"
+          >
+            Install Guard ↓
+          </Link>
           <Link
             href="/settings"
             className="border border-border hover:border-lime text-text text-xs px-3 py-2 uppercase font-bold"
@@ -325,12 +361,31 @@ export default function DashboardPage() {
 
       {/* Pull Requests & Scan Activity */}
       <section className="flex flex-col gap-4">
-        <div className="text-xs text-text-dim uppercase tracking-wider flex items-center justify-between">
+        <div className="text-xs text-text-dim uppercase tracking-wider flex flex-col md:flex-row md:items-center justify-between gap-3">
           <span>
             Recent Pull Request Scans —{" "}
             <span className="text-lime">{selectedRepo || "None selected"}</span>
           </span>
-          <span className="text-[10px] text-text-dim">Auto-refresh active</span>
+          <div className="flex items-center gap-3">
+            <form onSubmit={handleCustomScan} className="flex items-center gap-1.5">
+              <input
+                type="number"
+                min="1"
+                placeholder="PR #"
+                value={customPRInput}
+                onChange={(e) => setCustomPRInput(e.target.value)}
+                className="w-16 bg-surface-raised border border-border focus:border-lime text-text px-2 py-1 text-[11px] font-mono outline-none"
+              />
+              <button
+                type="submit"
+                disabled={customScanning || !customPRInput || !selectedRepo}
+                className="bg-lime hover:bg-lime-muted text-bg font-extrabold text-[10px] px-2.5 py-1 uppercase tracking-wider disabled:opacity-50 transition-colors cursor-pointer"
+              >
+                {customScanning ? "..." : "⚡ Scan PR"}
+              </button>
+            </form>
+            <span className="text-[10px] text-text-dim hidden sm:inline">Auto-refresh active</span>
+          </div>
         </div>
 
         <div className="border border-border bg-surface overflow-x-auto">
@@ -545,3 +600,18 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+export default function DashboardPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="max-w-7xl mx-auto px-4 py-16 font-mono text-center">
+          <div className="text-lime text-sm animate-pulse">&gt; LOADING DASHBOARD_</div>
+        </div>
+      }
+    >
+      <DashboardContent />
+    </Suspense>
+  );
+}
+

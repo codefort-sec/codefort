@@ -16,7 +16,7 @@ export const Navbar: React.FC = () => {
         </Link>
 
         {/* Navigation Links */}
-        <nav className="hidden md:flex items-center gap-6 text-xs text-text-muted">
+        <nav className="hidden md:flex items-center gap-5 text-xs text-text-muted">
           <Link href="/dashboard" className="hover:text-lime transition-colors">
             /01 DASHBOARD
           </Link>
@@ -28,21 +28,25 @@ export const Navbar: React.FC = () => {
           <Link href="/settings" className="hover:text-lime transition-colors">
             /03 EXTENSION PAIR
           </Link>
+          <span className="text-text-dim">+</span>
+          <Link href="/extension" className="hover:text-lime text-lime font-bold transition-colors">
+            /04 INSTALL GUIDE
+          </Link>
         </nav>
 
         {/* Right HUD info & CTA */}
         <div className="flex items-center gap-4">
           <div className="hidden sm:flex items-center gap-2 text-[10px] text-text-dim">
             <span className="w-2 h-2 rounded-full bg-lime animate-pulse" />
-            <span>SYS_ONLINE: 8000</span>
+            <span className="text-lime">SYS_ONLINE: LIVE / 200 OK</span>
           </div>
 
           <Link
-            href="/settings"
+            href="/extension"
             className="bg-lime hover:bg-lime-muted text-bg font-bold text-xs px-3 py-1.5 transition-colors uppercase tracking-wider flex items-center gap-1"
           >
-            <span>PAIR EXTENSION</span>
-            <span>↗</span>
+            <span>INSTALL GUARD</span>
+            <span>↓</span>
           </Link>
         </div>
       </div>

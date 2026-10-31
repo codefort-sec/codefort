@@ -1,6 +1,6 @@
 {
   "name": "codefort-guard-extension",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "description": "CodeFort Guard Chrome Extension for GitHub PR security scanning",
   "private": true,
   "type": "module",

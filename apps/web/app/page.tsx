@@ -43,10 +43,18 @@ export default function HomePage() {
               </Link>
 
               <Link
+                href="/extension"
+                className="bg-surface-raised border border-lime text-lime hover:bg-lime hover:text-bg font-extrabold text-xs px-5 py-3 tracking-wider uppercase transition-colors flex items-center gap-2"
+              >
+                <span>INSTALL EXTENSION</span>
+                <span>↓</span>
+              </Link>
+
+              <Link
                 href="/settings"
                 className="border border-border hover:border-lime text-text hover:text-lime font-bold text-xs px-5 py-3 tracking-wider uppercase transition-colors"
               >
-                PAIR BROWSER GUARD
+                PAIR TOKEN
               </Link>
             </div>
           </div>
@@ -157,17 +165,17 @@ export default function HomePage() {
 
         <div className="border border-border bg-surface p-5 flex flex-col justify-between">
           <div>
-            <div className="text-[10px] text-lime mb-2">/05 CHROME GUARD EXTENSION</div>
+            <div className="text-[10px] text-lime mb-2">/05 BROWSER GUARD (CHROME & FIREFOX)</div>
             <div className="text-sm font-bold text-text uppercase mb-2">Browser Copilot</div>
             <p className="text-xs text-text-muted mb-4">
-              Pair your Chrome extension to inspect verdicts and flagged diff lines directly within GitHub.
+              Install the extension on Chrome, Brave, Arc, Edge, or Firefox to inspect verdicts directly on GitHub PRs.
             </p>
           </div>
           <Link
-            href="/settings"
+            href="/extension"
             className="bg-lime hover:bg-lime-muted text-bg font-extrabold text-xs py-2 px-3 text-center uppercase tracking-wider"
           >
-            PAIR EXTENSION ↗
+            INSTALL EXTENSION ↗
           </Link>
         </div>
 

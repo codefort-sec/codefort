@@ -21,9 +21,20 @@ function parsePRUrl(url: string): { repo: string; pr: number } | null {
   };
 }
 
+function findTargetHeader(): Element | null {
+  return (
+    document.querySelector(".gh-header-meta") ||
+    document.querySelector("[data-testid=\"issue-metadata\"]") ||
+    document.querySelector(".gh-header-title") ||
+    document.querySelector("#partial-discussion-header") ||
+    document.querySelector(".gh-header-actions") ||
+    document.querySelector("div[class*=\"pr-header\"]")
+  );
+}
+
 let activeBadgeRoot: ReactDOM.Root | null = null;
 
-async function injectPRBadge(repo: string, pr: number) {
+async function injectPRBadge(repo: string, pr: number, retryCount = 0) {
   // 1. Remove existing badge if present
   const existing = document.getElementById(BADGE_ROOT_ID);
   if (existing) {
@@ -34,14 +45,13 @@ async function injectPRBadge(repo: string, pr: number) {
     existing.remove();
   }
 
-  // 2. Find target GitHub insertion point
-  // Priority: .gh-header-meta or .gh-header-actions or near .State
-  const targetHeader =
-    document.querySelector(".gh-header-meta") ||
-    document.querySelector(".gh-header-title") ||
-    document.querySelector("#partial-discussion-header");
+  // 2. Find target GitHub insertion point with retry for dynamic hydration
+  const targetHeader = findTargetHeader();
 
   if (!targetHeader) {
+    if (retryCount < 6) {
+      setTimeout(() => injectPRBadge(repo, pr, retryCount + 1), 250);
+    }
     return;
   }
 
@@ -119,9 +129,9 @@ async function injectLineWarnings(repo: string, pr: number) {
     const findings = findingsRes.data.findings;
 
     findings.forEach((finding) => {
-      // Find file container in GitHub diff view: div[data-tagsearch-path="filename"] or div[data-path="filename"]
+      // Find file container in GitHub diff view across classic and modern views
       const fileBoxes = document.querySelectorAll(
-        `div[data-path*="${finding.file_path}"], div[data-tagsearch-path*="${finding.file_path}"]`
+        `div[data-path*="${finding.file_path}"], div[data-tagsearch-path*="${finding.file_path}"], div[data-file-path*="${finding.file_path}"], .file[data-path*="${finding.file_path}"]`
       );
 
       fileBoxes.forEach((fileBox) => {
