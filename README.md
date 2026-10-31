@@ -80,12 +80,18 @@ Average Evaluation Latency:    0.00s (Deterministic Fail-Safe / Sub-second Infer
 - **What to tell judges:** *"Enterprises often cannot send sensitive proprietary source code to cloud APIs. We built a native LoRA training pipeline for on-premise deployment."*
 - **The Technical Flex:** Using parameter-efficient 4-bit quantization (PEFT/BitsAndBytes), organizations can specialize open-weights models like `Qwen2.5-Coder-7B-Instruct` on a single consumer GPU, keeping all security intelligence private and air-gapped.
 
-### 10. End-to-End Developer Experience (CLI + API + Browser Extension)
-- **What to tell judges:** *"Barq-AI isn't an isolated script; it is seamlessly integrated into the actual developer workflow."*
+### 10. End-to-End Developer Experience (CLI + API + Autonomous Browser Extension)
+- **What to tell judges:** *"Barq-AI isn't an isolated script; it is seamlessly integrated into the actual developer workflow. The moment a developer visits or receives a pull request on GitHub, the extension autonomously awakens."*
 - **The Technical Flex:**
-  - **CLI Scanner:** Run on-demand scans against any live GitHub PR (`run_scan.py`).
-  - **FastAPI Core:** Microservice with async background tasks and sub-second caching.
-  - **Browser Extension:** Real-time inline badges and line-by-line diff annotations injected directly inside GitHub Pull Request review pages.
+  - **Autonomous Extension Awakening (`serviceWorker.ts`):** The background service worker actively listens to GitHub tab lifecycle events (`chrome.tabs.onUpdated`, `chrome.tabs.onActivated`, and `webNavigation.onHistoryStateUpdated`). The moment a developer opens or switches into a GitHub Pull Request (`https://github.com/:owner/:repo/pull/:pr`), the extension instantly wakes up, pre-fetches Barq-AI risk telemetry, and dynamically updates the extension toolbar badge icon in real time:
+    - 🟥 **`BLK`** (#FF0055) for `BLOCKED` / Critical Threat (`risk_score >= 70`)
+    - 🟨 **`REV`** (#FFAA00) for `REVIEW_REQUIRED` (`risk_score >= 30`)
+    - 🟩 **`OK` / `PASS`** (#00FF66) for verified clean baseline
+    - 🟦 **`SCAN`** (#00E5FF) during real-time evaluation
+  - **In-DOM Telemetry Injection (`content.js`):** Mounts a cyber-brutalist security HUD directly into the PR header (`.gh-header-meta`, `#partial-discussion-header`) with automatic DOM retry logic (up to 12 attempts) for asynchronous GitHub Turbo/React hydration.
+  - **Dynamic Diff Container Observer (`/files` tab):** A dedicated `MutationObserver` watches progressive diff loading (`#files`, `.js-diff-progressive-container`) and mounts line-by-line threat annotations and remediation advice directly on the compromised code lines without requiring page refreshes.
+  - **CLI Scanner:** Run on-demand security evaluations against any live GitHub PR (`run_scan.py`).
+  - **FastAPI Core:** Production microservice with async background tasks, HMAC webhook verification, and sub-second memory caching.
 
 ---
 

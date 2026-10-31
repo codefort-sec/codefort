@@ -80,7 +80,8 @@ export type ExtensionMessage =
   | { type: "GET_PR_FINDINGS"; repo: string; pr: number }
   | { type: "GET_PR_SUMMARY"; repo: string; pr: number }
   | { type: "CHECK_PAIRING_STATUS" }
-  | { type: "PAIR_WITH_TOKEN"; pairingToken: string };
+  | { type: "PAIR_WITH_TOKEN"; pairingToken: string }
+  | { type: "AWAKE_PR_SCAN"; repo: string; pr: number; status?: ExtensionPRStatusResponse | null };
 
 export type ExtensionResponse<T = any> =
   | { success: true; data: T }
