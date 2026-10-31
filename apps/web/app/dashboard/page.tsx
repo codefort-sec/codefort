@@ -62,17 +62,59 @@ export default function DashboardPage() {
   }, []);
 
   useEffect(() => {
-    if (!selectedRepo) return;
+    if (!selectedRepo) {
+      setPrs([]);
+      return;
+    }
     async function loadPrs() {
       try {
         const prList = await apiFetch<PRItem[]>(`/api/v1/repositories/${selectedRepo}/pull-requests`);
         setPrs(prList);
       } catch (err) {
         console.error(`Failed to load PRs for ${selectedRepo}:`, err);
+        setPrs([]);
       }
     }
     loadPrs();
   }, [selectedRepo]);
+
+  async function handleDisconnectRepo(repoId: string, repoFullName: string, e: React.MouseEvent) {
+    e.stopPropagation();
+    try {
+      await apiFetch(`/api/v1/repositories/${encodeURIComponent(repoId)}/connect`, {
+        method: "DELETE",
+      });
+      setRepos((prev) => {
+        const remaining = prev.filter((r) => r.id !== repoId && r.full_name !== repoFullName);
+        if (selectedRepo === repoFullName) {
+          setSelectedRepo(remaining.length > 0 ? remaining[0].full_name : "");
+        }
+        return remaining;
+      });
+    } catch (err) {
+      console.error("Failed to disconnect repository:", err);
+    }
+  }
+
+  async function handleLoadDemoRepo() {
+    setLoading(true);
+    try {
+      const res = await apiFetch<RepoItem>("/api/v1/repositories", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ full_name: "codefort-sec/vulnerable-test-repo" }),
+      });
+      setRepos((prev) => {
+        const exists = prev.some((r) => r.full_name === res.full_name);
+        return exists ? prev : [res, ...prev];
+      });
+      setSelectedRepo(res.full_name);
+    } catch (err) {
+      console.error("Failed to load demo repo:", err);
+    } finally {
+      setLoading(false);
+    }
+  }
 
   async function handleConnectRepo(e: React.FormEvent) {
     e.preventDefault();
@@ -152,56 +194,121 @@ export default function DashboardPage() {
 
       {/* Repositories Section */}
       <section className="flex flex-col gap-4">
-        <div className="text-xs text-text-dim uppercase tracking-wider">
-          Connected Repositories ({repos.length}) — Click to filter scans
+        <div className="text-xs text-text-dim uppercase tracking-wider flex items-center justify-between">
+          <span>Connected Repositories ({repos.length}) — Click to filter scans</span>
+          {repos.length === 0 && (
+            <button
+              onClick={handleLoadDemoRepo}
+              className="text-[11px] text-lime hover:underline uppercase font-bold"
+            >
+              + Restore Demo Benchmark
+            </button>
+          )}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {repos.map((repo) => {
-            const isSelected = repo.full_name === selectedRepo;
-            return (
-              <div
-                key={repo.id}
-                onClick={() => setSelectedRepo(repo.full_name)}
-                className={`border p-4 flex flex-col justify-between cursor-pointer transition-all ${
-                  isSelected
-                    ? "border-lime bg-surface-raised shadow-[0_0_15px_rgba(204,255,0,0.15)]"
-                    : "border-border bg-surface hover:border-text-dim"
-                }`}
+        {repos.length === 0 ? (
+          <div className="border border-dashed border-border bg-surface p-8 text-center flex flex-col items-center justify-center gap-3">
+            <div className="text-lime text-xs font-bold tracking-widest uppercase">WORKSPACE READY // 0 REPOSITORIES</div>
+            <h3 className="text-base font-black text-text uppercase">No Repositories Connected</h3>
+            <p className="text-xs text-text-muted max-w-md">
+              Connect your own GitHub repository to activate real-time malicious PR defense, or load the pre-configured demo playground for evaluation.
+            </p>
+            <div className="flex items-center gap-3 mt-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setConnectError(null);
+                  setShowConnectModal(true);
+                }}
+                className="bg-lime hover:bg-lime-muted text-bg font-extrabold text-xs px-4 py-2 uppercase"
               >
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs text-text-dim">ID: {repo.id}</span>
-                    <span
-                      className={`text-[10px] px-2 py-0.5 font-bold ${
-                        isSelected
-                          ? "bg-lime text-bg font-extrabold"
-                          : "bg-lime/10 border border-lime text-lime"
-                      }`}
-                    >
-                      {isSelected ? "ACTIVE" : "CONNECTED"}
-                    </span>
+                + Connect Your Repository
+              </button>
+              <button
+                type="button"
+                onClick={handleLoadDemoRepo}
+                className="border border-border hover:border-lime text-text hover:text-lime font-bold text-xs px-4 py-2 uppercase"
+              >
+                Load Demo Benchmark ↗
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {repos.map((repo) => {
+              const isSelected = repo.full_name === selectedRepo;
+              const isDemo =
+                repo.full_name === "codefort-sec/vulnerable-test-repo" ||
+                repo.full_name === "codefort-sec/clean-test-repo";
+              return (
+                <div
+                  key={repo.id}
+                  onClick={() => setSelectedRepo(repo.full_name)}
+                  className={`border p-4 flex flex-col justify-between cursor-pointer transition-all ${
+                    isSelected
+                      ? "border-lime bg-surface-raised shadow-[0_0_15px_rgba(204,255,0,0.15)]"
+                      : "border-border bg-surface hover:border-text-dim"
+                  }`}
+                >
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-1.5">
+                        {isDemo ? (
+                          <span className="text-[9px] px-1.5 py-0.5 font-extrabold bg-lime/10 border border-lime text-lime uppercase tracking-wider">
+                            DEMO PLAYGROUND
+                          </span>
+                        ) : (
+                          <span className="text-[9px] px-1.5 py-0.5 font-bold bg-surface-raised border border-border text-text-dim uppercase tracking-wider">
+                            CONNECTED REPO
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`text-[10px] px-2 py-0.5 font-bold ${
+                            isSelected
+                              ? "bg-lime text-bg font-extrabold"
+                              : "bg-surface-raised text-text-muted"
+                          }`}
+                        >
+                          {isSelected ? "ACTIVE" : "SELECT"}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={(e) => handleDisconnectRepo(repo.id, repo.full_name, e)}
+                          title="Disconnect repository"
+                          className="text-text-dim hover:text-danger text-xs px-1 hover:bg-danger/10 transition-colors"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    </div>
+                    <div className="text-sm font-bold text-text uppercase mb-1 truncate">{repo.full_name}</div>
+                    <div className="text-[11px] text-text-muted mb-4">
+                      {isDemo
+                        ? "Curated evaluation repository loaded with live supply chain attack scenarios."
+                        : "Automated scan triggers active on PR opened & synchronize."}
+                    </div>
                   </div>
-                  <div className="text-sm font-bold text-text uppercase mb-1">{repo.full_name}</div>
-                  <div className="text-[11px] text-text-muted mb-4">
-                    Automated scan triggers active on PR opened & synchronize.
-                  </div>
-                </div>
 
-                <div className="border-t border-border pt-3 flex justify-between items-center text-xs">
-                  <span className="text-text-dim">POLICY: DEFAULT</span>
-                  <span className="text-lime font-bold">BLOCK ON CRITICAL</span>
+                  <div className="border-t border-border pt-3 flex justify-between items-center text-xs">
+                    <span className="text-text-dim">POLICY: DEFAULT</span>
+                    <span className="text-lime font-bold">BLOCK ON CRITICAL</span>
+                  </div>
                 </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        )}
       </section>
 
       {/* Pull Requests & Scan Activity */}
       <section className="flex flex-col gap-4">
         <div className="text-xs text-text-dim uppercase tracking-wider flex items-center justify-between">
-          <span>Recent Pull Request Scans — <span className="text-lime">{selectedRepo}</span></span>
+          <span>
+            Recent Pull Request Scans —{" "}
+            <span className="text-lime">{selectedRepo || "None selected"}</span>
+          </span>
           <span className="text-[10px] text-text-dim">Auto-refresh active</span>
         </div>
 
@@ -218,61 +325,73 @@ export default function DashboardPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {prs.map((pr) => {
-                const scan = pr.latest_scan;
-                const isBlocked = scan?.verdict === "BLOCKED";
-                const isReview = scan?.verdict === "REVIEW_REQUIRED";
-                const isPass = scan?.verdict === "PASS";
+              {prs.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="py-8 text-center text-text-dim font-mono">
+                    {loading
+                      ? "FETCHING PULL REQUESTS..."
+                      : selectedRepo
+                      ? "NO PULL REQUESTS DETECTED FOR THIS REPOSITORY YET."
+                      : "SELECT OR CONNECT A REPOSITORY ABOVE TO VIEW SCAN FORENSICS."}
+                  </td>
+                </tr>
+              ) : (
+                prs.map((pr) => {
+                  const scan = pr.latest_scan;
+                  const isBlocked = scan?.verdict === "BLOCKED";
+                  const isReview = scan?.verdict === "REVIEW_REQUIRED";
+                  const isPass = scan?.verdict === "PASS";
 
-                return (
-                  <tr key={pr.pull_request_number} className="hover:bg-surface-raised/50 transition-colors">
-                    <td className="py-3 px-4 font-bold text-lime">#{pr.pull_request_number}</td>
-                    <td className="py-3 px-4 font-medium text-text max-w-xs truncate">{pr.title}</td>
-                    <td className="py-3 px-4 text-text-muted">@{pr.author_login}</td>
-                    <td className="py-3 px-4">
-                      {scan ? (
-                        <span
-                          className={`px-2 py-0.5 text-[10px] font-bold border rounded-none ${
-                            isBlocked
-                              ? "bg-danger/10 border-danger text-danger"
-                              : isReview
-                              ? "bg-amber-500/10 border-amber-500 text-amber-500"
-                              : "bg-emerald-500/10 border-emerald-500 text-emerald-500"
-                          }`}
-                        >
-                          {scan.verdict.replace(/_/g, " ")}
-                        </span>
-                      ) : (
-                        <span className="text-text-dim">NO SCAN</span>
-                      )}
-                    </td>
-                    <td className="py-3 px-4 font-bold">
-                      {scan?.risk_score !== undefined ? (
-                        <span className="text-lime">{scan.risk_score} / 100</span>
-                      ) : (
-                        "—"
-                      )}
-                    </td>
-                    <td className="py-3 px-4 text-right">
-                      {scan ? (
-                        <Link
-                          href={`/scans/${scan.id}`}
-                          className="bg-lime hover:bg-lime-muted text-bg font-extrabold text-[10px] px-3 py-1 uppercase"
-                        >
-                          FORENSICS ↗
-                        </Link>
-                      ) : (
-                        <button
-                          type="button"
-                          className="border border-border text-text text-[10px] px-2 py-1"
-                        >
-                          TRIGGER SCAN
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
+                  return (
+                    <tr key={pr.pull_request_number} className="hover:bg-surface-raised/50 transition-colors">
+                      <td className="py-3 px-4 font-bold text-lime">#{pr.pull_request_number}</td>
+                      <td className="py-3 px-4 font-medium text-text max-w-xs truncate">{pr.title}</td>
+                      <td className="py-3 px-4 text-text-muted">@{pr.author_login}</td>
+                      <td className="py-3 px-4">
+                        {scan ? (
+                          <span
+                            className={`px-2 py-0.5 text-[10px] font-bold border rounded-none ${
+                              isBlocked
+                                ? "bg-danger/10 border-danger text-danger"
+                                : isReview
+                                ? "bg-amber-500/10 border-amber-500 text-amber-500"
+                                : "bg-emerald-500/10 border-emerald-500 text-emerald-500"
+                            }`}
+                          >
+                            {scan.verdict.replace(/_/g, " ")}
+                          </span>
+                        ) : (
+                          <span className="text-text-dim">NO SCAN</span>
+                        )}
+                      </td>
+                      <td className="py-3 px-4 font-bold">
+                        {scan?.risk_score !== undefined ? (
+                          <span className="text-lime">{scan.risk_score} / 100</span>
+                        ) : (
+                          "—"
+                        )}
+                      </td>
+                      <td className="py-3 px-4 text-right">
+                        {scan ? (
+                          <Link
+                            href={`/scans/${scan.id}`}
+                            className="bg-lime hover:bg-lime-muted text-bg font-extrabold text-[10px] px-3 py-1 uppercase"
+                          >
+                            FORENSICS ↗
+                          </Link>
+                        ) : (
+                          <button
+                            type="button"
+                            className="border border-border text-text text-[10px] px-2 py-1"
+                          >
+                            TRIGGER SCAN
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
             </tbody>
           </table>
         </div>

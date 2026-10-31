@@ -15,7 +15,7 @@ from app.services.mock_engine import mock_store
 
 router = APIRouter(prefix="/repositories", tags=["Repositories"])
 
-# Mock repository catalog
+# Mock repository catalog (Defaults to 1 curated demo repository for judges)
 _mock_repositories = {
     "repo_vulnerable": RepositoryResponse(
         id="repo_vulnerable",
@@ -32,54 +32,6 @@ _mock_repositories = {
             "require_dependency": True,
         },
         created_at=datetime(2026, 10, 31, 0, 0, 0, tzinfo=timezone.utc),
-    ),
-    "repo_clean": RepositoryResponse(
-        id="repo_clean",
-        github_repo_id=30302,
-        owner_login="codefort-sec",
-        name="clean-test-repo",
-        full_name="codefort-sec/clean-test-repo",
-        is_private=False,
-        is_connected=True,
-        policy={
-            "block_on_critical": True,
-            "review_on_high": True,
-            "require_static": True,
-            "require_dependency": True,
-        },
-        created_at=datetime(2026, 10, 31, 0, 0, 0, tzinfo=timezone.utc),
-    ),
-    "repo_codefort": RepositoryResponse(
-        id="repo_codefort",
-        github_repo_id=20202,
-        owner_login="codefort-sec",
-        name="codefort",
-        full_name="codefort-sec/codefort",
-        is_private=False,
-        is_connected=True,
-        policy={
-            "block_on_critical": True,
-            "review_on_high": True,
-            "require_static": True,
-            "require_dependency": True,
-        },
-        created_at=datetime(2026, 10, 29, 0, 0, 0, tzinfo=timezone.utc),
-    ),
-    "repo_1": RepositoryResponse(
-        id="repo_1",
-        github_repo_id=10101,
-        owner_login="owner",
-        name="repo",
-        full_name="owner/repo",
-        is_private=False,
-        is_connected=True,
-        policy={
-            "block_on_critical": True,
-            "review_on_high": True,
-            "require_static": True,
-            "require_dependency": True,
-        },
-        created_at=datetime(2026, 10, 29, 0, 0, 0, tzinfo=timezone.utc),
     ),
 }
 
@@ -147,6 +99,23 @@ async def get_repository(
     for r in _mock_repositories.values():
         if r.full_name == full_name:
             return r
+    if full_name == "codefort-sec/clean-test-repo":
+        return RepositoryResponse(
+            id="repo_clean",
+            github_repo_id=30302,
+            owner_login="codefort-sec",
+            name="clean-test-repo",
+            full_name="codefort-sec/clean-test-repo",
+            is_private=False,
+            is_connected=True,
+            policy={
+                "block_on_critical": True,
+                "review_on_high": True,
+                "require_static": True,
+                "require_dependency": True,
+            },
+            created_at=datetime(2026, 10, 31, 0, 0, 0, tzinfo=timezone.utc),
+        )
     raise NotFoundException(message=f"Repository {full_name} not found.", code="RESOURCE_NOT_FOUND")
 
 
@@ -166,13 +135,26 @@ async def connect_repository(
 
 
 @router.delete("/{repository_id}/connect", response_model=RepositoryResponse)
-async def disconnect_repository(repository_id: str = Path(..., description="Repository ID")):
-    """Disables CodeFort scanning on a repository."""
-    if repository_id not in _mock_repositories:
+async def disconnect_repository(repository_id: str = Path(..., description="Repository ID or full name")):
+    """Disables CodeFort scanning on a repository and removes it from the active list."""
+    target_key = None
+    target_repo = None
+    if repository_id in _mock_repositories:
+        target_key = repository_id
+        target_repo = _mock_repositories[repository_id]
+    else:
+        for k, r in _mock_repositories.items():
+            if r.id == repository_id or r.full_name == repository_id:
+                target_key = k
+                target_repo = r
+                break
+
+    if not target_repo:
         raise NotFoundException(message=f"Repository {repository_id} not found.", code="RESOURCE_NOT_FOUND")
-    repo = _mock_repositories[repository_id]
-    repo.is_connected = False
-    return repo
+
+    del _mock_repositories[target_key]
+    target_repo.is_connected = False
+    return target_repo
 
 
 @router.patch("/{owner}/{repo}/policy", response_model=RepositoryResponse)
