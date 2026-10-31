@@ -7,6 +7,7 @@ from typing import Dict, List, Optional, Tuple
 from app.schemas.common import EngineStatus, ScanStatus, Severity, Verdict
 from app.schemas.finding import FindingBase, FindingResponse
 from app.schemas.scan import CoverageInfo, ScanResponse, ScanSummary
+from app.services.engines.barqai import barqai_engine
 from app.services.engines.dependency_intel import DependencyIntelligence
 from app.services.engines.static_analyzer import StaticAnalyzer
 from app.services.engines.workflow_linter import WorkflowLinter
@@ -70,7 +71,7 @@ class ScanOrchestrator:
         verdict, risk_score = evaluate_policy(all_findings, coverage)
 
         # 3. Generate BARQAI structured explanation
-        summary = self._generate_barqai_summary(files, all_findings, verdict)
+        summary = await barqai_engine.generate_explanation(files, all_findings, verdict)
 
         completed_at = datetime.now(timezone.utc)
 

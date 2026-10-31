@@ -146,3 +146,16 @@ async def test_scan_orchestrator_clean_pr():
     assert scan.risk_score == 0
     assert len(findings) == 0
     assert "No security anomalies" in scan.summary.evidence_observed[0]
+
+
+@pytest.mark.asyncio
+async def test_barqai_engine_deterministic_fallback():
+    from app.services.engines.barqai import barqai_engine
+    summary = await barqai_engine.generate_explanation(
+        files={"package.json": "{}"},
+        findings=[],
+        verdict=Verdict.PASS,
+    )
+    assert summary.what_changed.startswith("Modified 1 file(s)")
+    assert "satisfied the configured organizational security baseline" in summary.why_it_matters
+
