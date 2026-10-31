@@ -11,6 +11,22 @@ router = APIRouter(prefix="/repositories", tags=["Repositories"])
 
 # Mock repository catalog
 _mock_repositories = {
+    "repo_codefort": RepositoryResponse(
+        id="repo_codefort",
+        github_repo_id=20202,
+        owner_login="codefort-sec",
+        name="codefort",
+        full_name="codefort-sec/codefort",
+        is_private=False,
+        is_connected=True,
+        policy={
+            "block_on_critical": True,
+            "review_on_high": True,
+            "require_static": True,
+            "require_dependency": True,
+        },
+        created_at=datetime(2026, 10, 29, 0, 0, 0, tzinfo=timezone.utc),
+    ),
     "repo_1": RepositoryResponse(
         id="repo_1",
         github_repo_id=10101,
@@ -26,7 +42,7 @@ _mock_repositories = {
             "require_dependency": True,
         },
         created_at=datetime(2026, 10, 29, 0, 0, 0, tzinfo=timezone.utc),
-    )
+    ),
 }
 
 
@@ -95,7 +111,27 @@ async def list_pull_requests(
     repo: str = Path(...),
 ):
     """Lists pull requests and their latest scan status."""
-    latest_scan = mock_store.get_latest_scan_for_pr(f"{owner}/{repo}", 42)
+    full_name = f"{owner}/{repo}"
+    if full_name == "codefort-sec/codefort":
+        pr_definitions = [
+            (1, "feat(analytics): add telemetry collector and install hook", "malicious-contributor"),
+            (2, "fix(deps): replace HTTP client with lightweight utility", "dev-collaborator"),
+            (3, "ci: add automated PR title validator workflow", "ci-bot"),
+            (4, "feat(security): enforce zero-trust telemetry and policy attestation", "security-lead"),
+        ]
+        prs = []
+        for pr_num, title, author in pr_definitions:
+            prs.append({
+                "pull_request_number": pr_num,
+                "title": title,
+                "author_login": author,
+                "state": "open",
+                "html_url": f"https://github.com/{owner}/{repo}/pull/{pr_num}",
+                "latest_scan": mock_store.get_latest_scan_for_pr(full_name, pr_num),
+            })
+        return prs
+
+    latest_scan = mock_store.get_latest_scan_for_pr(full_name, 42)
     return [
         {
             "pull_request_number": 42,
@@ -115,10 +151,18 @@ async def get_pull_request(
     pr_number: int = Path(..., ge=1),
 ):
     """Retrieves pull request metadata and latest scan result."""
-    latest_scan = mock_store.get_latest_scan_for_pr(f"{owner}/{repo}", pr_number)
+    full_name = f"{owner}/{repo}"
+    title_map = {
+        1: "feat(analytics): add telemetry collector and install hook",
+        2: "fix(deps): replace HTTP client with lightweight utility",
+        3: "ci: add automated PR title validator workflow",
+        4: "feat(security): enforce zero-trust telemetry and policy attestation",
+        42: "Add analytics script and dependency",
+    }
+    latest_scan = mock_store.get_latest_scan_for_pr(full_name, pr_number)
     return {
         "pull_request_number": pr_number,
-        "title": "Add analytics script and dependency" if pr_number == 42 else f"Pull Request #{pr_number}",
+        "title": title_map.get(pr_number, f"Pull Request #{pr_number}"),
         "author_login": "contributor",
         "state": "open",
         "html_url": f"https://github.com/{owner}/{repo}/pull/{pr_number}",

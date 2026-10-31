@@ -98,6 +98,204 @@ class MockStore:
         self.findings_by_scan[scan_id] = findings
         self.pr_latest_scan[f"{repo}#{pr_number}"] = scan_id
 
+        # Seed Scenario 1: codefort-sec/codefort #1 - Malicious Preinstall Dropper
+        cf_repo = "codefort-sec/codefort"
+        pr1_findings = [
+            FindingResponse(
+                id="fnd_101",
+                scan_id="scan_pr_1",
+                rule_id="npm.exec.preinstall",
+                title="Remote dropper executed in preinstall lifecycle hook",
+                description="The package.json preinstall script executes an unvetted remote bash dropper via curl | bash.",
+                severity=Severity.CRITICAL,
+                file_path="package.json",
+                line_start=7,
+                line_end=7,
+                evidence_id="ev_101",
+                recommendation="Remove unvetted curl|sh execution from package.json lifecycle scripts immediately.",
+                confidence=0.99,
+                fingerprint=hashlib.sha256(b"codefort-sec/codefort#1:package.json:7:npm.exec.preinstall").hexdigest(),
+                created_at=datetime(2026, 10, 31, 8, 0, 0, tzinfo=timezone.utc),
+            )
+        ]
+        self.scans["scan_pr_1"] = ScanResponse(
+            id="scan_pr_1",
+            repository=cf_repo,
+            pull_request=1,
+            status=ScanStatus.COMPLETED,
+            verdict=Verdict.BLOCKED,
+            risk_score=95,
+            coverage=CoverageInfo(
+                static_analysis=EngineStatus.COMPLETED,
+                dependency_intel=EngineStatus.COMPLETED,
+                workflow_linter=EngineStatus.COMPLETED,
+            ),
+            summary=ScanSummary(
+                what_changed="Added preinstall lifecycle hook executing remote shell script via curl pipe to bash.",
+                evidence_observed=[
+                    "curl command piping raw external content to bash dropper",
+                    "Network execution during automated dependency installation",
+                ],
+                why_it_matters="Remote arbitrary code execution triggers automatically during npm install before reviewer inspection, causing total runner compromise.",
+                recommended_actions=[
+                    "Reject PR immediately",
+                    "Quarantine pull request branch",
+                    "Rotate any CI/CD secrets exposed to branch runs",
+                ],
+            ),
+            created_at=datetime(2026, 10, 31, 8, 0, 0, tzinfo=timezone.utc),
+            completed_at=datetime(2026, 10, 31, 8, 0, 3, tzinfo=timezone.utc),
+        )
+        self.findings_by_scan["scan_pr_1"] = pr1_findings
+        self.pr_latest_scan[f"{cf_repo}#1"] = "scan_pr_1"
+
+        # Seed Scenario 2: codefort-sec/codefort #2 - Typosquat Dependency
+        pr2_findings = [
+            FindingResponse(
+                id="fnd_201",
+                scan_id="scan_pr_2",
+                rule_id="dep.typosquat",
+                title="High-confidence typosquat package detected: reqeusts",
+                description="The package 'reqeusts' is 1 edit distance from the popular library 'requests'.",
+                severity=Severity.HIGH,
+                file_path="package.json",
+                line_start=11,
+                line_end=11,
+                evidence_id="ev_201",
+                recommendation="Replace 'reqeusts' with the authentic package 'requests'.",
+                confidence=0.91,
+                fingerprint=hashlib.sha256(b"codefort-sec/codefort#2:package.json:11:dep.typosquat").hexdigest(),
+                created_at=datetime(2026, 10, 31, 8, 15, 0, tzinfo=timezone.utc),
+            )
+        ]
+        self.scans["scan_pr_2"] = ScanResponse(
+            id="scan_pr_2",
+            repository=cf_repo,
+            pull_request=2,
+            status=ScanStatus.COMPLETED,
+            verdict=Verdict.REVIEW_REQUIRED,
+            risk_score=65,
+            coverage=CoverageInfo(
+                static_analysis=EngineStatus.COMPLETED,
+                dependency_intel=EngineStatus.COMPLETED,
+                workflow_linter=EngineStatus.COMPLETED,
+            ),
+            summary=ScanSummary(
+                what_changed="Added dependency 'reqeusts' with 1 Levenshtein distance from popular library 'requests'.",
+                evidence_observed=[
+                    "Levenshtein edit distance = 1 to popular library",
+                    "Package age < 14 days on public npm registry",
+                ],
+                why_it_matters="Typosquatting is a frequent vector for credential exfiltration and backdoor injection into production dependencies.",
+                recommended_actions=[
+                    "Verify author intent",
+                    "Replace with authentic package name",
+                    "Check lockfile integrity",
+                ],
+            ),
+            created_at=datetime(2026, 10, 31, 8, 15, 0, tzinfo=timezone.utc),
+            completed_at=datetime(2026, 10, 31, 8, 15, 2, tzinfo=timezone.utc),
+        )
+        self.findings_by_scan["scan_pr_2"] = pr2_findings
+        self.pr_latest_scan[f"{cf_repo}#2"] = "scan_pr_2"
+
+        # Seed Scenario 3: codefort-sec/codefort #3 - Workflow Injection
+        pr3_findings = [
+            FindingResponse(
+                id="fnd_301",
+                scan_id="scan_pr_3",
+                rule_id="workflow.target.checkout",
+                title="Untrusted checkout with elevated repository write permissions",
+                description="Workflow combines pull_request_target with checkout of fork ref, creating privilege escalation path.",
+                severity=Severity.CRITICAL,
+                file_path=".github/workflows/validate.yml",
+                line_start=14,
+                line_end=14,
+                evidence_id="ev_301",
+                recommendation="Avoid checking out untrusted fork code in pull_request_target workflows.",
+                confidence=0.96,
+                fingerprint=hashlib.sha256(b"codefort-sec/codefort#3:.github/workflows/validate.yml:14:workflow.target.checkout").hexdigest(),
+                created_at=datetime(2026, 10, 31, 8, 30, 0, tzinfo=timezone.utc),
+            ),
+            FindingResponse(
+                id="fnd_302",
+                scan_id="scan_pr_3",
+                rule_id="workflow.script_injection",
+                title="Direct expression interpolation in inline shell execution",
+                description="Expression ${{ github.event.pull_request.title }} interpolated directly into bash script block.",
+                severity=Severity.HIGH,
+                file_path=".github/workflows/validate.yml",
+                line_start=22,
+                line_end=22,
+                evidence_id="ev_302",
+                recommendation="Pass GitHub event expressions via environment variables (env:) rather than inline interpolation.",
+                confidence=0.94,
+                fingerprint=hashlib.sha256(b"codefort-sec/codefort#3:.github/workflows/validate.yml:22:workflow.script_injection").hexdigest(),
+                created_at=datetime(2026, 10, 31, 8, 30, 0, tzinfo=timezone.utc),
+            ),
+        ]
+        self.scans["scan_pr_3"] = ScanResponse(
+            id="scan_pr_3",
+            repository=cf_repo,
+            pull_request=3,
+            status=ScanStatus.COMPLETED,
+            verdict=Verdict.BLOCKED,
+            risk_score=92,
+            coverage=CoverageInfo(
+                static_analysis=EngineStatus.COMPLETED,
+                dependency_intel=EngineStatus.COMPLETED,
+                workflow_linter=EngineStatus.COMPLETED,
+            ),
+            summary=ScanSummary(
+                what_changed="Created workflow with pull_request_target trigger, write-all permissions, and inline event title interpolation.",
+                evidence_observed=[
+                    "pull_request_target trigger combined with fork ref checkout",
+                    "Inline ${{ github.event.pull_request.title }} executed in bash step",
+                ],
+                why_it_matters="Allows malicious forks to inject arbitrary commands into high-privilege CI workflows with access to repository secrets.",
+                recommended_actions=[
+                    "Switch trigger to pull_request",
+                    "Drop write-all permissions",
+                    "Pass PR title through environment variables",
+                ],
+            ),
+            created_at=datetime(2026, 10, 31, 8, 30, 0, tzinfo=timezone.utc),
+            completed_at=datetime(2026, 10, 31, 8, 30, 4, tzinfo=timezone.utc),
+        )
+        self.findings_by_scan["scan_pr_3"] = pr3_findings
+        self.pr_latest_scan[f"{cf_repo}#3"] = "scan_pr_3"
+
+        # Seed Scenario 4: codefort-sec/codefort #4 - Clean PR
+        self.scans["scan_pr_4"] = ScanResponse(
+            id="scan_pr_4",
+            repository=cf_repo,
+            pull_request=4,
+            status=ScanStatus.COMPLETED,
+            verdict=Verdict.PASS,
+            risk_score=0,
+            coverage=CoverageInfo(
+                static_analysis=EngineStatus.COMPLETED,
+                dependency_intel=EngineStatus.COMPLETED,
+                workflow_linter=EngineStatus.COMPLETED,
+            ),
+            summary=ScanSummary(
+                what_changed="Added zero-trust telemetry logging and attestation checks without dangerous dependencies or scripts.",
+                evidence_observed=[
+                    "No dangerous lifecycle scripts detected",
+                    "All dependencies match official verified registries",
+                    "Workflows adhere to least-privilege permissions",
+                ],
+                why_it_matters="Change is verified clean and conforms to all organizational security policies.",
+                recommended_actions=[
+                    "Approved for standard peer code review and merge",
+                ],
+            ),
+            created_at=datetime(2026, 10, 31, 8, 45, 0, tzinfo=timezone.utc),
+            completed_at=datetime(2026, 10, 31, 8, 45, 2, tzinfo=timezone.utc),
+        )
+        self.findings_by_scan["scan_pr_4"] = []
+        self.pr_latest_scan[f"{cf_repo}#4"] = "scan_pr_4"
+
     def get_scan(self, scan_id: str) -> Optional[ScanResponse]:
         return self.scans.get(scan_id)
 

@@ -28,27 +28,41 @@ interface PRItem {
 
 export default function DashboardPage() {
   const [repos, setRepos] = useState<RepoItem[]>([]);
+  const [selectedRepo, setSelectedRepo] = useState<string>("codefort-sec/codefort");
   const [prs, setPrs] = useState<PRItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function loadData() {
+    async function loadRepos() {
       try {
         const repoList = await apiFetch<RepoItem[]>("/api/v1/repositories");
         setRepos(repoList);
-
         if (repoList.length > 0) {
-          const prList = await apiFetch<PRItem[]>("/api/v1/repositories/owner/repo/pull-requests");
-          setPrs(prList);
+          const hasCodefort = repoList.some((r) => r.full_name === "codefort-sec/codefort");
+          const defaultRepo = hasCodefort ? "codefort-sec/codefort" : repoList[0].full_name;
+          setSelectedRepo(defaultRepo);
         }
       } catch (err) {
-        console.error("Failed to load dashboard data:", err);
+        console.error("Failed to load repositories:", err);
       } finally {
         setLoading(false);
       }
     }
-    loadData();
+    loadRepos();
   }, []);
+
+  useEffect(() => {
+    if (!selectedRepo) return;
+    async function loadPrs() {
+      try {
+        const prList = await apiFetch<PRItem[]>(`/api/v1/repositories/${selectedRepo}/pull-requests`);
+        setPrs(prList);
+      } catch (err) {
+        console.error(`Failed to load PRs for ${selectedRepo}:`, err);
+      }
+    }
+    loadPrs();
+  }, [selectedRepo]);
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8 font-mono flex flex-col gap-8 w-full">
@@ -77,38 +91,56 @@ export default function DashboardPage() {
       {/* Repositories Section */}
       <section className="flex flex-col gap-4">
         <div className="text-xs text-text-dim uppercase tracking-wider">
-          Connected Repositories ({repos.length})
+          Connected Repositories ({repos.length}) — Click to filter scans
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {repos.map((repo) => (
-            <div key={repo.id} className="border border-border bg-surface p-4 flex flex-col justify-between">
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs text-text-dim">ID: {repo.id}</span>
-                  <span className="text-[10px] bg-lime/10 border border-lime text-lime px-2 py-0.5 font-bold">
-                    CONNECTED
-                  </span>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {repos.map((repo) => {
+            const isSelected = repo.full_name === selectedRepo;
+            return (
+              <div
+                key={repo.id}
+                onClick={() => setSelectedRepo(repo.full_name)}
+                className={`border p-4 flex flex-col justify-between cursor-pointer transition-all ${
+                  isSelected
+                    ? "border-lime bg-surface-raised shadow-[0_0_15px_rgba(204,255,0,0.15)]"
+                    : "border-border bg-surface hover:border-text-dim"
+                }`}
+              >
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs text-text-dim">ID: {repo.id}</span>
+                    <span
+                      className={`text-[10px] px-2 py-0.5 font-bold ${
+                        isSelected
+                          ? "bg-lime text-bg font-extrabold"
+                          : "bg-lime/10 border border-lime text-lime"
+                      }`}
+                    >
+                      {isSelected ? "ACTIVE" : "CONNECTED"}
+                    </span>
+                  </div>
+                  <div className="text-sm font-bold text-text uppercase mb-1">{repo.full_name}</div>
+                  <div className="text-[11px] text-text-muted mb-4">
+                    Automated scan triggers active on PR opened & synchronize.
+                  </div>
                 </div>
-                <div className="text-sm font-bold text-text uppercase mb-1">{repo.full_name}</div>
-                <div className="text-[11px] text-text-muted mb-4">
-                  Automated scan triggers active on PR opened & synchronize.
-                </div>
-              </div>
 
-              <div className="border-t border-border pt-3 flex justify-between items-center text-xs">
-                <span className="text-text-dim">POLICY: DEFAULT</span>
-                <span className="text-lime font-bold">BLOCK ON CRITICAL</span>
+                <div className="border-t border-border pt-3 flex justify-between items-center text-xs">
+                  <span className="text-text-dim">POLICY: DEFAULT</span>
+                  <span className="text-lime font-bold">BLOCK ON CRITICAL</span>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </section>
 
       {/* Pull Requests & Scan Activity */}
       <section className="flex flex-col gap-4">
-        <div className="text-xs text-text-dim uppercase tracking-wider">
-          Recent Pull Request Scans
+        <div className="text-xs text-text-dim uppercase tracking-wider flex items-center justify-between">
+          <span>Recent Pull Request Scans — <span className="text-lime">{selectedRepo}</span></span>
+          <span className="text-[10px] text-text-dim">Auto-refresh active</span>
         </div>
 
         <div className="border border-border bg-surface overflow-x-auto">
