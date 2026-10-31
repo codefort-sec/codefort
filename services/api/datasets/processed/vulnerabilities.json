@@ -1,0 +1,321 @@
+[
+  {
+    "evidence_id": "OSV-001",
+    "source": "OSV",
+    "package": "jinja2",
+    "ecosystem": "PyPI",
+    "version": "2.4.1",
+    "vulnerability_id": "GHSA-462w-v97r-4m45",
+    "aliases": [
+      "CVE-2019-10906",
+      "PYSEC-2019-217"
+    ],
+    "severity": "CVSS_V4",
+    "description": "Jinja2 sandbox escape via string formatting",
+    "fixed_version": "2.10.1"
+  },
+  {
+    "evidence_id": "OSV-002",
+    "source": "OSV",
+    "package": "jinja2",
+    "ecosystem": "PyPI",
+    "version": "2.4.1",
+    "vulnerability_id": "GHSA-8r7q-cvjq-x353",
+    "aliases": [
+      "CVE-2014-1402",
+      "PYSEC-2014-8"
+    ],
+    "severity": "CVSS_V4",
+    "description": "Incorrect Privilege Assignment in Jinja2",
+    "fixed_version": "2.7.2"
+  },
+  {
+    "evidence_id": "OSV-003",
+    "source": "OSV",
+    "package": "requests",
+    "ecosystem": "PyPI",
+    "version": "2.19.1",
+    "vulnerability_id": "GHSA-9hjg-9r4m-mvj7",
+    "aliases": [
+      "CVE-2024-47081",
+      "PYSEC-2026-1872"
+    ],
+    "severity": "CVSS_V3",
+    "description": "Requests vulnerable to .netrc credentials leak via malicious URLs",
+    "fixed_version": "2.32.4"
+  },
+  {
+    "evidence_id": "OSV-004",
+    "source": "OSV",
+    "package": "requests",
+    "ecosystem": "PyPI",
+    "version": "2.19.1",
+    "vulnerability_id": "GHSA-9wx4-h78v-vm56",
+    "aliases": [
+      "CVE-2024-35195",
+      "PYSEC-2026-1873"
+    ],
+    "severity": "CVSS_V3",
+    "description": "Requests `Session` object does not verify requests after making first request with verify=False",
+    "fixed_version": "2.32.0"
+  },
+  {
+    "evidence_id": "OSV-005",
+    "source": "OSV",
+    "package": "urllib3",
+    "ecosystem": "PyPI",
+    "version": "1.24.1",
+    "vulnerability_id": "GHSA-2xpw-w6gg-jr37",
+    "aliases": [
+      "CVE-2025-66471",
+      "PYSEC-2026-1994"
+    ],
+    "severity": "CVSS_V4",
+    "description": "urllib3 streaming API improperly handles highly compressed data",
+    "fixed_version": "2.6.0"
+  },
+  {
+    "evidence_id": "OSV-006",
+    "source": "OSV",
+    "package": "urllib3",
+    "ecosystem": "PyPI",
+    "version": "1.24.1",
+    "vulnerability_id": "GHSA-34jh-p97f-mpxf",
+    "aliases": [
+      "CVE-2024-37891",
+      "PYSEC-2026-1995"
+    ],
+    "severity": "CVSS_V3",
+    "description": "urllib3's Proxy-Authorization request header isn't stripped during cross-origin redirects",
+    "fixed_version": "2.2.2"
+  },
+  {
+    "evidence_id": "OSV-007",
+    "source": "OSV",
+    "package": "flask",
+    "ecosystem": "PyPI",
+    "version": "0.12",
+    "vulnerability_id": "GHSA-562c-5r94-xh97",
+    "aliases": [
+      "CVE-2018-1000656",
+      "PYSEC-2018-66"
+    ],
+    "severity": "CVSS_V4",
+    "description": "Flask is vulnerable to Denial of Service via incorrect encoding of JSON data",
+    "fixed_version": "0.12.3"
+  },
+  {
+    "evidence_id": "OSV-008",
+    "source": "OSV",
+    "package": "flask",
+    "ecosystem": "PyPI",
+    "version": "0.12",
+    "vulnerability_id": "GHSA-5wv5-4vpf-pj6m",
+    "aliases": [
+      "CVE-2019-1010083",
+      "PYSEC-2019-179"
+    ],
+    "severity": "CVSS_V4",
+    "description": "Pallets Project Flask is vulnerable to Denial of Service via Unexpected memory usage",
+    "fixed_version": "1.0"
+  },
+  {
+    "evidence_id": "OSV-009",
+    "source": "OSV",
+    "package": "django",
+    "ecosystem": "PyPI",
+    "version": "2.2.0",
+    "vulnerability_id": "GHSA-2gwj-7jmv-h26r",
+    "aliases": [
+      "BIT-django-2022-28346",
+      "CVE-2022-28346",
+      "PYSEC-2022-190"
+    ],
+    "severity": "CVSS_V4",
+    "description": "SQL Injection in Django",
+    "fixed_version": "4.0.4"
+  },
+  {
+    "evidence_id": "OSV-010",
+    "source": "OSV",
+    "package": "django",
+    "ecosystem": "PyPI",
+    "version": "2.2.0",
+    "vulnerability_id": "GHSA-2m34-jcjv-45xf",
+    "aliases": [
+      "BIT-django-2020-13596",
+      "CVE-2020-13596",
+      "PYSEC-2020-32"
+    ],
+    "severity": "CVSS_V4",
+    "description": "XSS in Django",
+    "fixed_version": "3.0.7"
+  },
+  {
+    "evidence_id": "OSV-011",
+    "source": "OSV",
+    "package": "cryptography",
+    "ecosystem": "PyPI",
+    "version": "3.2",
+    "vulnerability_id": "GHSA-3ww4-gg4f-jr7f",
+    "aliases": [
+      "CVE-2023-50782",
+      "PYSEC-2026-1283"
+    ],
+    "severity": "CVSS_V4",
+    "description": "Python Cryptography package vulnerable to Bleichenbacher timing oracle attack",
+    "fixed_version": "42.0.0"
+  },
+  {
+    "evidence_id": "OSV-012",
+    "source": "OSV",
+    "package": "cryptography",
+    "ecosystem": "PyPI",
+    "version": "3.2",
+    "vulnerability_id": "GHSA-537c-gmf6-5ccf",
+    "aliases": [],
+    "severity": "CVSS_V3",
+    "description": "Vulnerable OpenSSL included in cryptography wheels",
+    "fixed_version": "48.0.1"
+  },
+  {
+    "evidence_id": "OSV-013",
+    "source": "OSV",
+    "package": "lodash",
+    "ecosystem": "npm",
+    "version": "4.17.15",
+    "vulnerability_id": "GHSA-29mw-wpgm-hmr9",
+    "aliases": [
+      "CVE-2020-28500"
+    ],
+    "severity": "CVSS_V3",
+    "description": "Regular Expression Denial of Service (ReDoS) in lodash",
+    "fixed_version": "4.17.21"
+  },
+  {
+    "evidence_id": "OSV-014",
+    "source": "OSV",
+    "package": "lodash",
+    "ecosystem": "npm",
+    "version": "4.17.15",
+    "vulnerability_id": "GHSA-35jh-r3h4-6jhm",
+    "aliases": [
+      "CVE-2021-23337"
+    ],
+    "severity": "CVSS_V3",
+    "description": "Command Injection in lodash",
+    "fixed_version": "4.17.21"
+  },
+  {
+    "evidence_id": "OSV-015",
+    "source": "OSV",
+    "package": "axios",
+    "ecosystem": "npm",
+    "version": "0.21.0",
+    "vulnerability_id": "GHSA-3g43-6gmg-66jw",
+    "aliases": [
+      "CVE-2026-44495"
+    ],
+    "severity": "CVSS_V3",
+    "description": "axios Vulnerable to Credential Theft and Response Hijacking via Prototype Pollution Gadget in Config Merge",
+    "fixed_version": "0.31.1"
+  },
+  {
+    "evidence_id": "OSV-016",
+    "source": "OSV",
+    "package": "axios",
+    "ecosystem": "npm",
+    "version": "0.21.0",
+    "vulnerability_id": "GHSA-3p68-rc4w-qgx5",
+    "aliases": [
+      "CVE-2025-62718"
+    ],
+    "severity": "CVSS_V4",
+    "description": "Axios has a NO_PROXY Hostname Normalization Bypass that Leads to SSRF",
+    "fixed_version": "0.31.0"
+  },
+  {
+    "evidence_id": "OSV-017",
+    "source": "OSV",
+    "package": "minimist",
+    "ecosystem": "npm",
+    "version": "1.2.0",
+    "vulnerability_id": "GHSA-vh95-rmgr-6w4m",
+    "aliases": [
+      "CVE-2020-7598"
+    ],
+    "severity": "CVSS_V3",
+    "description": "Prototype Pollution in minimist",
+    "fixed_version": "1.2.3"
+  },
+  {
+    "evidence_id": "OSV-018",
+    "source": "OSV",
+    "package": "minimist",
+    "ecosystem": "npm",
+    "version": "1.2.0",
+    "vulnerability_id": "GHSA-xvch-5gv4-984h",
+    "aliases": [
+      "CVE-2021-44906"
+    ],
+    "severity": "CVSS_V3",
+    "description": "Prototype Pollution in minimist",
+    "fixed_version": "0.2.4"
+  },
+  {
+    "evidence_id": "OSV-019",
+    "source": "OSV",
+    "package": "json5",
+    "ecosystem": "npm",
+    "version": "2.2.1",
+    "vulnerability_id": "GHSA-9c47-m6qq-7p4h",
+    "aliases": [
+      "CVE-2022-46175"
+    ],
+    "severity": "CVSS_V3",
+    "description": "Prototype Pollution in JSON5 via Parse Method",
+    "fixed_version": "1.0.2"
+  },
+  {
+    "evidence_id": "OSV-020",
+    "source": "OSV",
+    "package": "express",
+    "ecosystem": "npm",
+    "version": "4.17.1",
+    "vulnerability_id": "GHSA-qw6h-vgh9-j6wx",
+    "aliases": [
+      "CVE-2024-43796"
+    ],
+    "severity": "CVSS_V4",
+    "description": "express vulnerable to XSS via response.redirect()",
+    "fixed_version": "5.0.0"
+  },
+  {
+    "evidence_id": "OSV-021",
+    "source": "OSV",
+    "package": "express",
+    "ecosystem": "npm",
+    "version": "4.17.1",
+    "vulnerability_id": "GHSA-rv95-896h-c2vc",
+    "aliases": [
+      "CVE-2024-29041"
+    ],
+    "severity": "CVSS_V3",
+    "description": "Express.js Open Redirect in malformed URLs",
+    "fixed_version": "5.0.0-beta.3"
+  },
+  {
+    "evidence_id": "OSV-022",
+    "source": "OSV",
+    "package": "semver",
+    "ecosystem": "npm",
+    "version": "7.5.1",
+    "vulnerability_id": "GHSA-c2qf-rxjj-qqgw",
+    "aliases": [
+      "CVE-2022-25883"
+    ],
+    "severity": "CVSS_V3",
+    "description": "semver vulnerable to Regular Expression Denial of Service",
+    "fixed_version": "5.7.2"
+  }
+]

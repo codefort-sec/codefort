@@ -161,39 +161,32 @@ class DependencyIntelligence:
         file_path: str,
     ) -> List[FindingBase]:
         findings: List[FindingBase] = []
+        from app.services.engines.osv_client import get_vulnerabilities
 
-        async with httpx.AsyncClient(timeout=4.0) as client:
-            for name, ver, line_no in packages:
-                if not ver:
-                    continue
-                try:
-                    payload = {
-                        "version": ver,
-                        "package": {"name": name, "ecosystem": ecosystem},
-                    }
-                    res = await client.post(self.osv_base_url, json=payload)
-                    if res.status_code == 200:
-                        data = res.json()
-                        vulns = data.get("vulns", [])
-                        for vuln in vulns[:2]:  # cap at 2 top vulns per package
-                            vuln_id = vuln.get("id", "VULN")
-                            summary = vuln.get("summary", "Known vulnerability reported in OSV")
-                            findings.append(
-                                FindingBase(
-                                    rule_id=f"dep.cve.{vuln_id}",
-                                    title=f"Vulnerability in {name}@{ver}: {vuln_id}",
-                                    description=f"{summary} (OSV ID: {vuln_id})",
-                                    severity=Severity.HIGH,
-                                    file_path=file_path,
-                                    line_start=line_no,
-                                    line_end=line_no,
-                                    recommendation=f"Upgrade package '{name}' to a patched release.",
-                                    confidence=0.99,
-                                )
-                            )
-                except Exception:
-                    # Fail safely per TRD requirements without halting other checks
-                    pass
+        for name, ver, line_no in packages:
+            if not ver:
+                continue
+            try:
+                vulns = await get_vulnerabilities(name, ecosystem, ver, timeout=5.0)
+                for vuln in vulns[:2]:  # cap at 2 top vulns per package
+                    vuln_id = vuln.get("id", "VULN")
+                    summary = vuln.get("summary", "Known vulnerability reported in OSV")
+                    findings.append(
+                        FindingBase(
+                            rule_id=f"dep.cve.{vuln_id}",
+                            title=f"Vulnerability in {name}@{ver}: {vuln_id}",
+                            description=f"{summary} (OSV ID: {vuln_id})",
+                            severity=Severity.HIGH,
+                            file_path=file_path,
+                            line_start=line_no,
+                            line_end=line_no,
+                            recommendation=f"Upgrade package '{name}' to a patched release.",
+                            confidence=0.99,
+                        )
+                    )
+            except Exception:
+                # Fail safely without halting other checks
+                pass
 
         return findings
 
