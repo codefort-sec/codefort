@@ -4,13 +4,15 @@ import React, { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { apiFetch, triggerPRScan } from "@/lib/api";
-
-interface RepoItem {
-  id: string;
-  full_name: string;
-  is_connected: boolean;
-  policy?: Record<string, any>;
-}
+import {
+  addLocalRepo,
+  getLocalRepos,
+  getWorkspaceId,
+  removeLocalRepo,
+  RepoItem,
+  restoreDemoRepo,
+  saveLocalRepos,
+} from "@/lib/workspace";
 
 interface PRItem {
   pull_request_number: number;
@@ -32,6 +34,7 @@ function DashboardContent() {
   const repoQuery = searchParams.get("repo");
 
   const [repos, setRepos] = useState<RepoItem[]>([]);
+  const [workspaceId, setWorkspaceId] = useState<string>("");
   const [selectedRepo, setSelectedRepo] = useState<string>(
     repoQuery || "codefort-sec/vulnerable-test-repo"
   );
@@ -53,30 +56,58 @@ function DashboardContent() {
   const [policyRequireStatic, setPolicyRequireStatic] = useState(true);
   const [policyRequireDep, setPolicyRequireDep] = useState(true);
 
+  // Initialize and load repos from local workspace storage (instant, zero flickering)
   useEffect(() => {
-    async function loadRepos() {
-      try {
-        const repoList = await apiFetch<RepoItem[]>("/api/v1/repositories");
-        setRepos(repoList);
-        if (repoList.length > 0) {
-          if (repoQuery && repoList.some((r) => r.full_name.toLowerCase() === repoQuery.toLowerCase())) {
-            const found = repoList.find((r) => r.full_name.toLowerCase() === repoQuery.toLowerCase());
-            if (found) setSelectedRepo(found.full_name);
-          } else if (repoQuery) {
-            setSelectedRepo(repoQuery);
-          } else {
-            const hasVuln = repoList.some((r) => r.full_name === "codefort-sec/vulnerable-test-repo");
-            const defaultRepo = hasVuln ? "codefort-sec/vulnerable-test-repo" : repoList[0].full_name;
-            setSelectedRepo(defaultRepo);
-          }
+    const wsId = getWorkspaceId();
+    setWorkspaceId(wsId);
+    const local = getLocalRepos();
+    setRepos(local);
+
+    if (local.length > 0) {
+      if (repoQuery && local.some((r) => r.full_name.toLowerCase() === repoQuery.toLowerCase())) {
+        const found = local.find((r) => r.full_name.toLowerCase() === repoQuery.toLowerCase());
+        if (found) setSelectedRepo(found.full_name);
+      } else if (repoQuery) {
+        // Query param repo not in list yet, connect it locally
+        const newRepoItem: RepoItem = {
+          id: "repo_" + Math.random().toString(36).substring(2, 8),
+          full_name: repoQuery,
+          is_connected: true,
+        };
+        const updated = addLocalRepo(newRepoItem);
+        setRepos(updated);
+        setSelectedRepo(repoQuery);
+      } else {
+        const hasSelected = local.some((r) => r.full_name === selectedRepo);
+        if (!hasSelected) {
+          const hasVuln = local.some((r) => r.full_name === "codefort-sec/vulnerable-test-repo");
+          setSelectedRepo(hasVuln ? "codefort-sec/vulnerable-test-repo" : local[0].full_name);
         }
-      } catch (err) {
-        console.error("Failed to load repositories:", err);
-      } finally {
-        setLoading(false);
       }
     }
-    loadRepos();
+    setLoading(false);
+
+    // Sync with backend in background
+    async function syncWithBackend() {
+      try {
+        const backendRepos = await apiFetch<RepoItem[]>("/api/v1/repositories");
+        if (backendRepos && backendRepos.length > 0) {
+          setRepos((prev) => {
+            const merged = [...prev];
+            backendRepos.forEach((br) => {
+              if (!merged.some((m) => m.full_name.toLowerCase() === br.full_name.toLowerCase())) {
+                merged.push(br);
+              }
+            });
+            saveLocalRepos(merged);
+            return merged;
+          });
+        }
+      } catch {
+        // Offline/serverless resilient: local storage is the source of truth
+      }
+    }
+    syncWithBackend();
   }, [repoQuery]);
 
   useEffect(() => {
@@ -104,39 +135,32 @@ function DashboardContent() {
 
   async function handleDisconnectRepo(repoId: string, repoFullName: string, e: React.MouseEvent) {
     e.stopPropagation();
+    const updated = removeLocalRepo(repoId, repoFullName);
+    setRepos(updated);
+    if (selectedRepo === repoFullName) {
+      setSelectedRepo(updated.length > 0 ? updated[0].full_name : "");
+    }
     try {
       await apiFetch(`/api/v1/repositories/${encodeURIComponent(repoId)}/connect`, {
         method: "DELETE",
       });
-      setRepos((prev) => {
-        const remaining = prev.filter((r) => r.id !== repoId && r.full_name !== repoFullName);
-        if (selectedRepo === repoFullName) {
-          setSelectedRepo(remaining.length > 0 ? remaining[0].full_name : "");
-        }
-        return remaining;
-      });
-    } catch (err) {
-      console.error("Failed to disconnect repository:", err);
+    } catch {
+      // Non-blocking
     }
   }
 
   async function handleLoadDemoRepo() {
-    setLoading(true);
+    const updated = restoreDemoRepo();
+    setRepos(updated);
+    setSelectedRepo("codefort-sec/vulnerable-test-repo");
     try {
-      const res = await apiFetch<RepoItem>("/api/v1/repositories", {
+      await apiFetch<RepoItem>("/api/v1/repositories", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ full_name: "codefort-sec/vulnerable-test-repo" }),
       });
-      setRepos((prev) => {
-        const exists = prev.some((r) => r.full_name === res.full_name);
-        return exists ? prev : [res, ...prev];
-      });
-      setSelectedRepo(res.full_name);
-    } catch (err) {
-      console.error("Failed to load demo repo:", err);
-    } finally {
-      setLoading(false);
+    } catch {
+      // Non-blocking
     }
   }
 
@@ -194,19 +218,28 @@ function DashboardContent() {
         require_dependency: policyRequireDep,
       };
 
-      const res = await apiFetch<RepoItem>("/api/v1/repositories", {
+      const newRepoItem: RepoItem = {
+        id: "repo_" + Math.random().toString(36).substring(2, 8),
+        full_name: cleanName,
+        is_connected: true,
+        policy,
+      };
+
+      // 1. Immediately persist locally
+      const updated = addLocalRepo(newRepoItem);
+      setRepos(updated);
+      setSelectedRepo(cleanName);
+      setNewRepoName("");
+      setShowConnectModal(false);
+
+      // 2. Notify backend in background to register
+      apiFetch<RepoItem>("/api/v1/repositories", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ full_name: cleanName, policy }),
+      }).catch((err) => {
+        console.warn("Backend repo registration background note:", err);
       });
-
-      setRepos((prev) => {
-        const exists = prev.some((r) => r.full_name === res.full_name);
-        return exists ? prev : [res, ...prev];
-      });
-      setSelectedRepo(res.full_name);
-      setNewRepoName("");
-      setShowConnectModal(false);
     } catch (err: any) {
       console.error("Failed to connect repository:", err);
       setConnectError(err?.message || "Failed to connect repository. Please verify name.");
@@ -220,7 +253,17 @@ function DashboardContent() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between border-b border-border pb-4 gap-4">
         <div>
-          <div className="text-xs text-lime uppercase tracking-widest">/01 DASHBOARD</div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-lime uppercase tracking-widest">/01 DASHBOARD</span>
+            {workspaceId && (
+              <span
+                className="text-[10px] bg-surface-raised border border-border text-text-dim px-2 py-0.5 rounded"
+                title="Your private browser workspace. Connected repositories are stored securely on this device."
+              >
+                WORKSPACE: {workspaceId}
+              </span>
+            )}
+          </div>
           <h1 className="text-2xl font-black text-text uppercase">REPOSITORIES & PULL REQUESTS</h1>
         </div>
         <div className="flex items-center gap-3">
@@ -252,13 +295,23 @@ function DashboardContent() {
       {/* Repositories Section */}
       <section className="flex flex-col gap-4">
         <div className="text-xs text-text-dim uppercase tracking-wider flex items-center justify-between">
-          <span>Connected Repositories ({repos.length}) — Click to filter scans</span>
+          <div className="flex items-center gap-3">
+            <span>Connected Repositories ({repos.length})</span>
+            <button
+              type="button"
+              onClick={handleLoadDemoRepo}
+              className="text-[10px] text-lime/80 hover:text-lime uppercase font-bold border border-border px-2 py-0.5 hover:border-lime transition-colors cursor-pointer"
+              title="Ensure demo scenario repository is present"
+            >
+              + Add Demo Repo
+            </button>
+          </div>
           {repos.length === 0 && (
             <button
               onClick={handleLoadDemoRepo}
-              className="text-[11px] text-lime hover:underline uppercase font-bold"
+              className="text-[11px] text-lime hover:underline uppercase font-bold cursor-pointer"
             >
-              + Restore Demo Benchmark
+              Restore Default Demo Repository
             </button>
           )}
         </div>
