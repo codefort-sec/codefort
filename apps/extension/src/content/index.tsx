@@ -39,10 +39,14 @@ function findTargetHeader(): { parent: Element; insertBefore?: Element | null } 
   const meta =
     document.querySelector(".gh-header-meta") ||
     document.querySelector("[data-testid=\"issue-metadata\"]") ||
+    document.querySelector("[data-testid=\"header-metadata\"]") ||
     document.querySelector(".gh-header-title") ||
     document.querySelector("#partial-discussion-header") ||
     document.querySelector(".gh-header-actions") ||
-    document.querySelector("div[class*=\"pr-header\"]");
+    document.querySelector("div[class*=\"pr-header\"]") ||
+    document.querySelector("[data-testid=\"pull-request-header\"]") ||
+    document.querySelector("#discussion_bucket") ||
+    document.querySelector(".timeline-comment-header");
 
   if (meta) {
     return { parent: meta, insertBefore: null };
@@ -71,7 +75,7 @@ async function injectPRBadge(repo: string, pr: number, retryCount = 0, force = f
   const target = findTargetHeader();
 
   if (!target || !target.parent) {
-    if (retryCount < 8) {
+    if (retryCount < 24) {
       setTimeout(() => injectPRBadge(repo, pr, retryCount + 1, force), 250);
     }
     return;
@@ -98,41 +102,63 @@ async function injectPRBadge(repo: string, pr: number, retryCount = 0, force = f
     <BadgeOverlay status={null} summary={null} loading={true} />
   );
 
-  // 4. Fetch status and summary via background service worker
+  // 4. Fetch status FIRST (fast, <500ms) without waiting for slow LLM summaries
   try {
     const statusMsg: ExtensionMessage = { type: "GET_PR_STATUS", repo, pr, force };
-    const summaryMsg: ExtensionMessage = { type: "GET_PR_SUMMARY", repo, pr, force };
-
-    const [statusRes, summaryRes] = await Promise.all([
-      chrome.runtime.sendMessage<ExtensionMessage, ExtensionResponse<ExtensionPRStatusResponse>>(statusMsg),
-      chrome.runtime.sendMessage<ExtensionMessage, ExtensionResponse<ExtensionSummaryResponse>>(summaryMsg),
-    ]);
+    const statusRes = await chrome.runtime.sendMessage<
+      ExtensionMessage,
+      ExtensionResponse<ExtensionPRStatusResponse>
+    >(statusMsg);
 
     if (!statusRes?.success) {
+      const errorMsg = (statusRes as any)?.error?.message || "Failed to fetch scan status";
       activeBadgeRoot.render(
         <BadgeOverlay
           status={null}
           summary={null}
           loading={false}
-          error={statusRes?.error?.message || "Failed to fetch scan"}
+          error={errorMsg}
           onRetry={handleRetry}
         />
       );
       return;
     }
 
+    const currentStatus = statusRes.data;
+
+    // Immediately render the badge and trigger the floating screen alert banner!
     activeBadgeRoot.render(
       <BadgeOverlay
-        status={statusRes.data}
-        summary={summaryRes?.success ? summaryRes.data : null}
+        status={currentStatus}
+        summary={null}
         loading={false}
         onRetry={handleRetry}
       />
     );
 
     // 5. Fetch line findings and set up dynamic diff observer
-    await loadAndApplyFindings(repo, pr, force);
+    loadAndApplyFindings(repo, pr, force);
     ensureDiffObserver();
+
+    // 6. Asynchronously fetch rich AI summary in background without blocking UI
+    const summaryMsg: ExtensionMessage = { type: "GET_PR_SUMMARY", repo, pr, force };
+    chrome.runtime
+      .sendMessage<ExtensionMessage, ExtensionResponse<ExtensionSummaryResponse>>(summaryMsg)
+      .then((summaryRes) => {
+        if (summaryRes?.success && summaryRes.data && activeBadgeRoot) {
+          activeBadgeRoot.render(
+            <BadgeOverlay
+              status={currentStatus}
+              summary={summaryRes.data}
+              loading={false}
+              onRetry={handleRetry}
+            />
+          );
+        }
+      })
+      .catch((summaryErr) => {
+        console.warn("Background summary fetch note:", summaryErr);
+      });
   } catch (err: any) {
     activeBadgeRoot.render(
       <BadgeOverlay

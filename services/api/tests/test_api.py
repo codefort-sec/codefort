@@ -102,12 +102,22 @@ async def test_extension_pairing_flow(client: AsyncClient):
     token = resp1.json()["pairing_token"]
     assert token.startswith("pair_")
 
+    # 1b. Check status is pending
+    status_resp = await client.get(f"/api/v1/extension/pairing-tokens/{token}/status")
+    assert status_resp.status_code == 200
+    assert status_resp.json()["status"] == "pending"
+
     # 2. Exchange token
     resp2 = await client.post("/api/v1/extension/pair", json={"pairing_token": token})
     assert resp2.status_code == 200
     pair_data = resp2.json()
     assert pair_data["token_type"] == "bearer"
     assert pair_data["access_token"].startswith("ext_")
+
+    # 2b. Check status is now paired
+    status_resp2 = await client.get(f"/api/v1/extension/pairing-tokens/{token}/status")
+    assert status_resp2.status_code == 200
+    assert status_resp2.json()["status"] == "paired"
 
     # 3. Re-exchanging used token should fail
     resp3 = await client.post("/api/v1/extension/pair", json={"pairing_token": token})

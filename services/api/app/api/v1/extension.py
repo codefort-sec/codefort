@@ -21,24 +21,55 @@ router = APIRouter(prefix="/extension", tags=["Extension"])
 
 # In-memory pairing tokens for skeleton/dev
 _active_pairing_tokens = set()
+_pairing_tokens_status: dict = {
+    "demo-pairing-token": {"token": "demo-pairing-token", "status": "paired"}
+}
 
 
 @router.post("/pairing-tokens", response_model=PairingTokenResponse)
 async def create_pairing_token():
     """Generates a short-lived single-use pairing token from dashboard."""
+    import time
     token = f"pair_{secrets.token_hex(16)}"
     _active_pairing_tokens.add(token)
+    _pairing_tokens_status[token] = {
+        "token": token,
+        "status": "pending",
+        "created_at": time.time(),
+        "paired_at": None,
+    }
     return PairingTokenResponse(pairing_token=token, expires_in_seconds=300)
+
+
+@router.get("/pairing-tokens/{token}/status")
+async def get_pairing_token_status(token: str):
+    """Checks the real-time pairing status of a token."""
+    import time
+    record = _pairing_tokens_status.get(token)
+    if not record:
+        if token in _active_pairing_tokens:
+            return {"token": token, "status": "pending"}
+        return {"token": token, "status": "expired"}
+
+    if record.get("status") == "pending" and time.time() - record.get("created_at", 0) > 300:
+        record["status"] = "expired"
+        _active_pairing_tokens.discard(token)
+
+    return record
 
 
 @router.post("/pair", response_model=ExtensionPairResponse)
 async def pair_extension(req: ExtensionPairRequest):
     """Exchanges a valid pairing token for a scoped extension credential."""
+    import time
     if req.pairing_token not in _active_pairing_tokens:
         if req.pairing_token != "demo-pairing-token":
             raise NotFoundException(message="Invalid or expired pairing token.", code="INVALID_PAIRING_TOKEN")
     else:
         _active_pairing_tokens.remove(req.pairing_token)
+        if req.pairing_token in _pairing_tokens_status:
+            _pairing_tokens_status[req.pairing_token]["status"] = "paired"
+            _pairing_tokens_status[req.pairing_token]["paired_at"] = time.time()
 
     return ExtensionPairResponse(
         access_token=f"ext_{secrets.token_hex(24)}",
