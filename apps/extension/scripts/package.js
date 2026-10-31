@@ -62,7 +62,9 @@ if (fs.existsSync(strayFfManifestInFf)) {
 
 // 4. Create ZIP archives
 console.log("🗜 Creating release archives...");
-const projectRoot = path.resolve(rootDir, "../..");
+const projectRoot = fs.existsSync(path.resolve(rootDir, "../../package.json"))
+  ? path.resolve(rootDir, "../..")
+  : rootDir;
 const chromeZip = path.join(projectRoot, "codefort-guard-chrome-v0.1.2.zip");
 const firefoxZip = path.join(projectRoot, "codefort-guard-firefox-v0.1.2.zip");
 const firefoxXpi = path.join(projectRoot, "codefort-guard-firefox-v0.1.2.xpi");
