@@ -35,4 +35,7 @@ apps/extension/dist/
 *.zip
 *.xpi
 
+# Local staging
+codefort/
+
 

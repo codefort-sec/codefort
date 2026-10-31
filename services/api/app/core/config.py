@@ -48,8 +48,12 @@ class Settings(BaseSettings):
     GITHUB_TOKEN: str = ""
 
     # LLM / AI (BARQAI Engine)
-    LLM_PROVIDER: str = "gemini"
+    LLM_PROVIDER: str = "openrouter"
     LLM_API_KEY: str = ""
+    OPENROUTER_API_KEY: str = ""
+    OPENROUTER_BASE_URL: str = "https://openrouter.ai/api/v1"
+    OPENROUTER_MODEL: str = "qwen/qwen3.8-max-0902"
+    OPENROUTER_REASONING: str = "xhigh"
 
     # Queue & Cache
     REDIS_URL: str = "redis://localhost:6379/0"
