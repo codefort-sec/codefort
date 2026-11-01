@@ -6,6 +6,7 @@ import {
   ChatMessage,
   sendBarqAIChat,
 } from "@/lib/api";
+import { synthesizeBarqAIChatResponse } from "@/lib/barqai_engine";
 
 interface BarqAIChatModalProps {
   isOpen: boolean;
@@ -134,13 +135,32 @@ export const BarqAIChatModal: React.FC<BarqAIChatModalProps> = ({
         setActiveTabByMsg((prev) => ({ ...prev, [assistantMsgId]: "code" }));
       }
     } catch (err: any) {
-      const errorMsg: MessageItem = {
-        id: `err_${Date.now()}`,
+      console.warn("sendBarqAIChat modal fallback triggered:", err);
+      const fallbackRes = synthesizeBarqAIChatResponse({
+        message: textToSend,
+        error_context: errorContext || undefined,
+        code_snippet: codeSnippet || undefined,
+        file_path: filePath || undefined,
+        scan_id: scanId || undefined,
+      });
+
+      const assistantMsgId = `barq_${Date.now()}`;
+      const assistantMsg: MessageItem = {
+        id: assistantMsgId,
         role: "assistant",
-        text: `⚠️ **Error communicating with BARQAI**: ${err.message || "Failed to process request."}`,
+        text: fallbackRes.reply,
+        explanation: fallbackRes.explanation,
+        rewrittenCode: fallbackRes.rewritten_code,
+        diff: fallbackRes.diff,
+        model: fallbackRes.model,
+        suggestedActions: fallbackRes.suggested_actions,
         timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       };
-      setMessages((prev) => [...prev, errorMsg]);
+
+      setMessages((prev) => [...prev, assistantMsg]);
+      if (fallbackRes.rewritten_code) {
+        setActiveTabByMsg((prev) => ({ ...prev, [assistantMsgId]: "code" }));
+      }
     } finally {
       setLoading(false);
     }

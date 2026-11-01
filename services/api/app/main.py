@@ -3,6 +3,7 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from app.api.v1.barqai_chat import router as barqai_chat_router
 from app.api.v1.health import router as health_router
 from app.api.v1.router import api_v1_router
 from app.core.config import settings
@@ -48,6 +49,7 @@ app.include_router(health_router)
 
 # 5. API v1 routers
 app.include_router(api_v1_router)
+app.include_router(barqai_chat_router)
 
 
 @app.get("/", tags=["Root"])
