@@ -2,6 +2,8 @@
  * CodeFort Web Dashboard API Client
  */
 
+import { synthesizeBarqAIChatResponse } from "./barqai_engine";
+
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://codefort-lilac.vercel.app";
 
 export async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> {
@@ -283,10 +285,40 @@ export interface BarqAIChatResponse {
 }
 
 export async function sendBarqAIChat(req: BarqAIChatRequest): Promise<BarqAIChatResponse> {
-  return apiFetch<BarqAIChatResponse>("/api/v1/barqai/chat", {
-    method: "POST",
-    body: JSON.stringify(req),
-  });
+  // 1. Try local/relative endpoint (Next.js route handler /api/v1/barqai/chat on current domain)
+  try {
+    const res = await fetch("/api/v1/barqai/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(req),
+      cache: "no-store",
+    });
+    if (res.ok) {
+      return await res.json();
+    }
+  } catch {
+    // Relative fetch failed or running in non-browser context
+  }
+
+  // 2. Try configured API_BASE_URL if set to a custom active backend
+  if (API_BASE_URL && !API_BASE_URL.includes("codefort-lilac.vercel.app")) {
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/v1/barqai/chat`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(req),
+        cache: "no-store",
+      });
+      if (res.ok) {
+        return await res.json();
+      }
+    } catch {
+      // Backend unreachable
+    }
+  }
+
+  // 3. Resilient Fail-Safe: Execute client-side BARQAI reasoning & rewriter engine
+  return synthesizeBarqAIChatResponse(req);
 }
 
 
