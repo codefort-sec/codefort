@@ -270,6 +270,10 @@ async def call_llm_for_chat(
 
 @router.post("/barqai/chat", response_model=BarqAIChatResponse, status_code=status.HTTP_200_OK)
 @router.post("/chat", response_model=BarqAIChatResponse, status_code=status.HTTP_200_OK)
+@router.post("/api/v1/barqai/chat", response_model=BarqAIChatResponse, status_code=status.HTTP_200_OK)
+@router.post("/api/v1/chat", response_model=BarqAIChatResponse, status_code=status.HTTP_200_OK)
+@router.post("/api/barqai/chat", response_model=BarqAIChatResponse, status_code=status.HTTP_200_OK)
+@router.post("/api/chat", response_model=BarqAIChatResponse, status_code=status.HTTP_200_OK)
 async def chat_with_barqai(req: BarqAIChatRequest) -> BarqAIChatResponse:
     """
     Interactive AI assistant endpoint.
