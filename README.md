@@ -4,7 +4,7 @@
 [![Web Dashboard](https://img.shields.io/badge/Web_Dashboard-Vercel_Live-00ff66?style=flat-square&logo=vercel)](https://codefort-web.vercel.app)
 [![FastAPI Engine](https://img.shields.io/badge/FastAPI_Engine-Vercel_Live-00e5ff?style=flat-square&logo=fastapi)](https://codefort-lilac.vercel.app/docs)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue?style=flat-square)](LICENSE)
-[![Python Tests](https://img.shields.io/badge/Pytest-63%20Passed%20(100%25)-00ff66?style=flat-square&logo=python)](services/api/tests/)
+[![Python Tests](https://img.shields.io/badge/Pytest-78%20Passed%20(100%25)-00ff66?style=flat-square&logo=python)](services/api/tests/)
 [![OSV Benchmark](https://img.shields.io/badge/OSV_Evaluation-20%2F20%20(100%25)-00e5ff?style=flat-square)](services/api/datasets/evaluation/barqai_test.jsonl)
 
 > **Next-generation AI security platform that intercepts malicious pull requests, detects software supply chain poisoning, and prevents CI/CD workflow injection attacks before code merges into production. Powered by Barq-AI with unified frontier intelligence (Qwen 2.5 Coder MoE / Qwen3.8-Max + Google Gemini), concrete OSV evidence grounding, deterministic backend risk scoring, and autonomous 1-click patch verification.**
@@ -274,6 +274,96 @@ Configure these repository permissions in [GitHub Developer Settings — Apps](h
    - **`BLOCK`** ➔ `failure` (🔴 Red merge block)
    - Includes line-level annotations on flagged code and comprehensive Markdown forensic summaries.
 
+### 4. What Developers See on GitHub
+```markdown
+## CODEFORT Security Check — 🔴 BLOCKED
+**Risk Score:** `85/100` | **Verdict:** `BLOCK`
+
+### 🧠 BARQAI Security Intelligence
+**What Changed:** Added preinstall lifecycle dropper and typosquatted dependency 'lodashe' in package.json.
+**Impact Assessment:** Preinstall hook executes unvetted remote bash dropper via curl | bash, leading to arbitrary code execution during npm install.
+
+**Evidence Observed:**
+- [CRITICAL] Remote dropper execution in lifecycle hook (curl | bash) (`package.json:7`)
+- [HIGH] High-confidence typosquat package detected: lodashe (`package.json:12`)
+- [CRITICAL] Dynamic sandbox detected egress to 185.199.108.133:443 (c2-transfer.mock.xyz)
+
+### 🛠️ Remediation & Recommendations
+- Remove unvetted curl|sh execution from package.json lifecycle scripts immediately.
+- Replace 'lodashe' with the authentic package 'lodash'.
+- Review proposed 1-click patch in CODEFORT Patch Studio.
+```
+
+---
+
+## 🌐 Phase 6: System Testing & Production Deployment Architecture
+
+```mermaid
+flowchart LR
+    Dev["Developer\n(Browser / Git Push)"] --> GH["GitHub App\n(Webhooks & Checks API)"]
+    GH --> VercelWeb["Next.js 14 Dashboard\n(Vercel Hosting)"]
+    GH --> RenderAPI["FastAPI Engine Core\n(Render Hosting)"]
+    RenderAPI --> PG[("Managed PostgreSQL\n(Users / Scans / Forensics)")]
+    RenderAPI --> RedisQ["Redis Task Queue\n(Scan Jobs & Retries)"]
+    RedisQ --> Worker["Isolated Worker\n(Docker Sandbox Execution)"]
+    RenderAPI <--> Qwen["Qwen 2.5 Coder MoE\n(OpenRouter Frontier LLM)"]
+```
+
+### Production Deployment Architecture
+| Component | Production Platform | Configuration & Role |
+| :--- | :--- | :--- |
+| **Frontend Web** | [Vercel](https://vercel.com) | Next.js 14 App Router, `NEXT_PUBLIC_API_URL=https://api.codefort.sec` |
+| **Backend API** | [Render](https://render.com) | FastAPI on Python 3.12, `uv run uvicorn app.main:app --host 0.0.0.0 --port $PORT` |
+| **Database** | Managed PostgreSQL | Stores Users, Repositories, Pull Requests, Scans, and Findings |
+| **Task Queue** | Redis-Compatible Queue | Asynchronous PR scan orchestration with retry policies |
+| **Dynamic Sandbox** | Isolated Docker Worker | Containerized preinstall simulation with strict CPU/memory/network egress limits |
+| **Frontier AI** | Qwen via OpenRouter | High-reasoning MoE models (`qwen-2.5-coder-32b-instruct` / `qwen3.8-max`) |
+
+### Production Environment Variables (`.env`)
+```env
+# GitHub App Authentication
+GITHUB_APP_ID=123456
+GITHUB_CLIENT_ID=Iv1.your_client_id
+GITHUB_CLIENT_SECRET=your_client_secret
+GITHUB_WEBHOOK_SECRET=your_random_hmac_secret
+GITHUB_PRIVATE_KEY_PATH=./private-key.pem
+
+# AI Multi-Provider Credentials
+OPENROUTER_API_KEY=sk-or-v1-your_openrouter_key
+OPENROUTER_MODEL=qwen/qwen-2.5-coder-32b-instruct
+GEMINI_API_KEY=your_gemini_api_key
+
+# Infrastructure
+DATABASE_URL=postgresql+asyncpg://postgres:password@localhost:5432/codefort
+SESSION_SECRET=your_hex_session_secret
+```
+
+---
+
+## 🧠 Phase 7: AI Optimization & Advanced Intelligence Roadmap
+
+```
+DETECT ──> ANALYZE ──> EXPLAIN ──> REMEDIATE ──> VERIFY ──> PROTECT
+```
+
+1. **Intelligent Multi-Model Routing Layer:**
+   - **Simple PR Summaries:** Fast, low-latency Qwen models.
+   - **Complex Attack Chain Investigations:** Frontier `Qwen3.8-Max` MoE with extended reasoning.
+   - **Unified Git Diff Generation:** Coding-specialized `Qwen 2.5 Coder 32B Instruct`.
+   - **Zero-Downtime Fallback:** Instant local deterministic rule-based generation if external APIs are unreachable.
+
+2. **RAG Knowledge Base Expansion:**
+   - Real-time retrieval across **OSV (Open Source Vulnerability)** database, **GitHub Security Advisory Database (GHSA)**, and **NIST NVD**.
+   - Grounds every explanation in verified vulnerability identifiers (`CVE-XXXX-XXXXX`, `GHSA-XXXX-XXXX-XXXX`) with zero hallucinated CVE numbers.
+
+3. **Developer Feedback Learning Loop:**
+   - Interactive feedback collection (`Correct finding`, `False positive`, `Incomplete explanation`).
+   - Stores feedback records alongside commit SHAs, model versions, and human-corrected explanations to continuously optimize evaluation benchmarks.
+
+4. **Attack Chain Visualization & Security Analytics:**
+   - Interactive attack graph connecting lifecycle scripts, network egress, file mutations, and credential access.
+   - Repository-wide risk trend monitoring and customizable organizational blocking policies.
+
 ---
 
 ## 🚀 Quick Start: Running & Testing
@@ -358,14 +448,14 @@ barqai/
 │   └── api/                     # FastAPI Detection Engine & Barq-AI Core
 │       ├── app/
 │       │   ├── ai/              # eval_suite.py, knowledge_base.py, dataset.jsonl, train_lora.py
-│       │   ├── api/v1/          # auth, repositories, scans, extension, remediation, webhooks
-│       │   ├── services/engines/# barqai.py, patch_verifier.py, osv_client.py, orchestrator.py, etc.
-│       │   └── schemas/         # scan.py, finding.py, remediation.py, extension.py
+│       │   ├── api/v1/          # auth, repositories, scans, extension, remediation, github_webhooks
+│       │   ├── services/engines/# barqai.py, remediation_engine.py, github_checks.py, patch_verifier.py
+│       │   └── schemas/         # scan.py, finding.py, remediation.py, barqai_analysis.py, extension.py
 │       ├── datasets/
 │       │   ├── raw/             # osv_data.json
 │       │   ├── processed/       # vulnerabilities.json
 │       │   └── evaluation/      # barqai_test.jsonl (20-case OSV evaluation dataset)
-│       └── tests/               # 32 pytest unit and integration test suites
+│       └── tests/               # 78 pytest unit and integration tests across 7 test suites
 ├── fixtures/
 │   └── scenarios/               # Attack scenarios for automated testing & grading
 └── scripts/
