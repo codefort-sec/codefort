@@ -256,3 +256,37 @@ export async function approveRemediation(
   });
 }
 
+export interface ChatMessage {
+  role: "user" | "assistant" | "system";
+  content: string;
+}
+
+export interface BarqAIChatRequest {
+  message: string;
+  error_context?: string;
+  code_snippet?: string;
+  file_path?: string;
+  scan_id?: string;
+  finding_id?: string;
+  history?: ChatMessage[];
+  action?: "chat" | "explain" | "rewrite" | "fix";
+}
+
+export interface BarqAIChatResponse {
+  reply: string;
+  explanation: string;
+  rewritten_code?: string;
+  original_code?: string;
+  diff?: string;
+  model: string;
+  suggested_actions: string[];
+}
+
+export async function sendBarqAIChat(req: BarqAIChatRequest): Promise<BarqAIChatResponse> {
+  return apiFetch<BarqAIChatResponse>("/api/v1/barqai/chat", {
+    method: "POST",
+    body: JSON.stringify(req),
+  });
+}
+
+

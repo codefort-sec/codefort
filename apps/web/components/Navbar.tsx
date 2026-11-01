@@ -28,14 +28,25 @@ export const Navbar: React.FC = () => {
           <Link href="/settings" className="hover:text-lime transition-colors">
             /03 EXTENSION PAIR
           </Link>
+          <span className="text-text-dim">+</span>
+          <Link href="/chat" className="text-lime hover:text-lime-muted font-bold transition-colors flex items-center gap-1">
+            <span>💬 /04 BARQAI CHAT</span>
+          </Link>
         </nav>
 
         {/* Right HUD info & CTA */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
           <div className="hidden sm:flex items-center gap-2 text-[10px] text-text-dim">
             <span className="w-2 h-2 rounded-full bg-lime animate-pulse" />
             <span>SYS_ONLINE: 8000</span>
           </div>
+
+          <Link
+            href="/chat"
+            className="border border-lime text-lime hover:bg-lime hover:text-bg font-bold text-xs px-2.5 py-1.5 transition-colors uppercase tracking-wider flex items-center gap-1"
+          >
+            <span>💬 CHAT WITH BARQAI</span>
+          </Link>
 
           <Link
             href="/settings"

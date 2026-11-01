@@ -16,6 +16,7 @@ import {
   testSandboxRemediation,
   approveRemediation,
 } from "@/lib/api";
+import { BarqAIChatModal } from "@/components/BarqAIChatModal";
 
 export default function ScanDetailPage({ params }: { params: { id: string } }) {
   const [scan, setScan] = useState<ScanDetail | null>(null);
@@ -32,6 +33,9 @@ export default function ScanDetailPage({ params }: { params: { id: string } }) {
   const [applyResult, setApplyResult] = useState<{ success: boolean; message: string } | null>(null);
   const [testResult, setTestResult] = useState<{ passed: boolean; details: string } | null>(null);
   const [approvalResult, setApprovalResult] = useState<{ approved: boolean; message: string } | null>(null);
+  const [showChatModal, setShowChatModal] = useState(false);
+  const [chatContext, setChatContext] = useState<{ error?: string; code?: string; filePath?: string }>({});
+
 
   useEffect(() => {
     async function loadScanData() {
@@ -223,16 +227,32 @@ export default function ScanDetailPage({ params }: { params: { id: string } }) {
           </div>
         </div>
 
-        {/* Score Readout */}
-        <div className="flex items-center gap-6 border-l border-border pl-6">
+        {/* Score Readout & Assistant Action */}
+        <div className="flex flex-wrap items-center gap-4 md:border-l md:border-border md:pl-6">
           <div className="text-right">
             <div className="text-[10px] text-text-dim uppercase tracking-wider">ESTIMATED RISK</div>
             <div className="text-4xl font-black text-lime">
               {scan.risk_score ?? 0} <span className="text-xs text-text-dim">/ 100</span>
             </div>
           </div>
+
+          <button
+            type="button"
+            onClick={() => {
+              setChatContext({
+                error: scan.summary?.why_it_matters || scan.summary?.what_changed,
+                filePath: "package.json",
+                code: scan.summary?.clean_patch || "",
+              });
+              setShowChatModal(true);
+            }}
+            className="border-2 border-lime bg-lime/10 hover:bg-lime hover:text-bg text-lime font-black text-xs px-4 py-2.5 uppercase tracking-wider transition-all flex items-center gap-1.5 shadow-lg shadow-lime/10"
+          >
+            <span>💬 CHAT WITH BARQAI</span>
+          </button>
         </div>
       </div>
+
 
       {/* Coverage Status Bar */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
@@ -783,13 +803,29 @@ export default function ScanDetailPage({ params }: { params: { id: string } }) {
                   </div>
                 )}
 
-                <button
-                  type="button"
-                  onClick={() => setSelectedFinding(f)}
-                  className="bg-surface-raised border border-border hover:border-lime text-lime font-bold text-[10px] px-3 py-1 uppercase"
-                >
-                  INSPECT REMEDIATION ↗
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setChatContext({
+                        error: `Finding: ${f.title} (${f.severity}) - ${f.description || ""}`,
+                        filePath: f.file_path,
+                        code: f.recommendation || "",
+                      });
+                      setShowChatModal(true);
+                    }}
+                    className="border border-lime/60 hover:border-lime bg-lime/10 text-lime font-bold text-[10px] px-3 py-1 uppercase flex items-center gap-1 transition-colors"
+                  >
+                    <span>💬 CHAT WITH BARQAI</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedFinding(f)}
+                    className="bg-surface-raised border border-border hover:border-lime text-lime font-bold text-[10px] px-3 py-1 uppercase"
+                  >
+                    INSPECT REMEDIATION ↗
+                  </button>
+                </div>
               </div>
             </div>
           ))}
@@ -873,6 +909,16 @@ export default function ScanDetailPage({ params }: { params: { id: string } }) {
           </div>
         </div>
       )}
+
+      {/* BARQAI Chat & Code Rewriter Modal */}
+      <BarqAIChatModal
+        isOpen={showChatModal}
+        onClose={() => setShowChatModal(false)}
+        initialError={chatContext.error}
+        initialCode={chatContext.code}
+        initialFilePath={chatContext.filePath}
+        scanId={params.id}
+      />
     </div>
   );
 }

@@ -2,6 +2,7 @@
 
 from fastapi import APIRouter
 from app.api.v1.auth import router as auth_router
+from app.api.v1.barqai_chat import router as barqai_chat_router
 from app.api.v1.extension import router as extension_router
 from app.api.v1.github_webhooks import router as github_webhooks_router
 from app.api.v1.health import router as health_router
@@ -21,5 +22,7 @@ api_v1_router.include_router(extension_router)
 api_v1_router.include_router(github_webhooks_router)
 api_v1_router.include_router(webhooks_router)
 api_v1_router.include_router(remediation_router)
+api_v1_router.include_router(barqai_chat_router)
+
 
 
