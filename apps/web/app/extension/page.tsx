@@ -27,10 +27,20 @@ export default function ExtensionGuidePage() {
 
     const interval = setInterval(async () => {
       try {
-        const res = await apiFetch<{ token: string; status: string; paired_at?: number }>(
-          `/api/v1/extension/pairing-tokens/${pairingToken}/status`
-        );
-        if (res?.status === "paired") {
+        let isSuccess = false;
+        try {
+          const res = await apiFetch<{ token?: string; pairing_token?: string; status: string; paired?: boolean }>(
+            `/api/v1/extension/pairing-status?token=${encodeURIComponent(pairingToken)}`
+          );
+          if (res?.status === "paired" || res?.paired) isSuccess = true;
+        } catch {
+          const res2 = await apiFetch<{ token?: string; pairing_token?: string; status: string; paired?: boolean }>(
+            `/api/v1/extension/pairing-tokens/${pairingToken}/status`
+          );
+          if (res2?.status === "paired" || res2?.paired) isSuccess = true;
+        }
+
+        if (isSuccess) {
           setIsPaired(true);
           const timeStr = new Date().toLocaleTimeString();
           setPairedAt(timeStr);
