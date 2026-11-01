@@ -1,8 +1,7 @@
-"""Export common schemas."""
-
+from app.schemas.barqai_analysis import BARQAIFindingAnalysis, RiskLevel, StandardBARQAIAnalysis
 from app.schemas.common import EngineStatus, PaginatedResponse, ScanStatus, Severity, Verdict
 from app.schemas.finding import FindingBase, FindingListResponse, FindingResponse
-from app.schemas.scan import BARQAIExplanation, CoverageInfo, ScanCreateRequest, ScanResponse, ScanSummary
+from app.schemas.scan import BARQAIExplanation, CoverageInfo, SandboxTelemetry, ScanCreateRequest, ScanResponse, ScanSummary
 from app.schemas.extension import (
     ExtensionFindingsCount,
     ExtensionFindingsListResponse,
@@ -15,6 +14,14 @@ from app.schemas.extension import (
 )
 from app.schemas.repository import RepositoryConnectRequest, RepositoryPolicyUpdate, RepositoryResponse
 from app.schemas.auth import AuthMeResponse, UserResponse
+from app.schemas.remediation import (
+    ApplyRemediationRequest,
+    RemediationApplyRequest,
+    RemediationApplyResponse,
+    RemediationProposal,
+    RemediationResponse,
+    RemediationVerifyRequest,
+)
 
 __all__ = [
     "ScanStatus",
@@ -28,6 +35,7 @@ __all__ = [
     "CoverageInfo",
     "ScanSummary",
     "BARQAIExplanation",
+    "SandboxTelemetry",
     "ScanResponse",
     "ScanCreateRequest",
     "ExtensionFindingsCount",
@@ -43,4 +51,10 @@ __all__ = [
     "RepositoryPolicyUpdate",
     "UserResponse",
     "AuthMeResponse",
+    "RemediationProposal",
+    "RemediationResponse",
+    "RemediationVerifyRequest",
+    "RemediationApplyRequest",
+    "RemediationApplyResponse",
 ]
+

@@ -30,7 +30,7 @@ export default function HomePage() {
             </p>
 
             <p className="text-xs md:text-sm text-text-muted max-w-xl leading-relaxed">
-              Detects malicious lifecycle scripts, typosquatted dependencies, and unsafe GitHub Actions workflows before pull requests merge. Powered by the BARQAI explanation engine with traceable evidence.
+              Detects malicious lifecycle scripts, typosquatted dependencies, and unsafe GitHub Actions workflows before pull requests merge. Powered by the Barq-AI explanation engine with traceable evidence.
             </p>
 
             <div className="flex flex-wrap items-center gap-4 pt-4">
@@ -96,7 +96,7 @@ export default function HomePage() {
                 <span className="text-lime font-bold">READY</span>
               </div>
               <div className="flex justify-between items-center py-1 text-[11px]">
-                <span className="text-text-muted">BARQAI EXPLANATION ENGINE</span>
+                <span className="text-text-muted">Barq-AI EXPLANATION ENGINE</span>
                 <span className="text-lime font-bold">ONLINE</span>
               </div>
             </div>
@@ -140,7 +140,7 @@ export default function HomePage() {
           <div className="border border-border bg-surface p-4">
             <div className="text-lime font-bold text-xs mb-1">05. ACTIONABLE</div>
             <div className="text-xs font-bold text-text uppercase mb-2">EXPLAINABLE PATCHES</div>
-            <p className="text-[11px] text-text-muted">BARQAI provides plain-language impact summaries and remediations.</p>
+            <p className="text-[11px] text-text-muted">Barq-AI provides plain-language impact summaries and remediations.</p>
           </div>
         </div>
       </section>
@@ -184,7 +184,7 @@ export default function HomePage() {
             <div className="text-[10px] text-lime mb-2">/06 LIVE SCAN FORENSICS</div>
             <div className="text-sm font-bold text-text uppercase mb-2">Inspect Malicious PR #1</div>
             <p className="text-xs text-text-muted mb-4">
-              Review suspicious shell script execution, typosquatted dependencies, and BARQAI analysis.
+              Review suspicious shell script execution, typosquatted dependencies, and Barq-AI analysis.
             </p>
           </div>
           <Link

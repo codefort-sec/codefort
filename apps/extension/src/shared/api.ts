@@ -6,6 +6,7 @@ import { getStoredConfig, setStoredConfig } from "./storage";
 import {
   ExtensionFindingsResponse,
   ExtensionPRStatusResponse,
+  ExtensionRemediationResponse,
   ExtensionSummaryResponse,
 } from "./types";
 
@@ -76,6 +77,22 @@ export async function triggerPRScan(repo: string, pr: number): Promise<Extension
     }
   }
   return fetchPRStatus(repo, pr);
+}
+
+export async function fetchPRRemediation(repo: string, pr: number): Promise<ExtensionRemediationResponse> {
+  return request<ExtensionRemediationResponse>(
+    `/api/v1/extension/remediation?repo=${encodeURIComponent(repo)}&pr=${pr}`
+  );
+}
+
+export async function applyPRRemediation(repo: string, pr: number): Promise<{ status: string; message: string }> {
+  return request<{ status: string; message: string }>(
+    `/api/v1/extension/remediation/apply?repo=${encodeURIComponent(repo)}&pr=${pr}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+    }
+  );
 }
 
 export async function pairWithToken(pairingToken: string): Promise<boolean> {

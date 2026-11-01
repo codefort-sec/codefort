@@ -167,3 +167,4 @@ async def run_demo_scan(body: ScanCreateRequest):
         findings=normalized_findings,
         sandbox_telemetry=telemetry_obj,
     )
+

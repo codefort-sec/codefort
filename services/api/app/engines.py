@@ -253,6 +253,16 @@ class SandboxRunner:
         }
 
 
+from app.services.engines.github_checks import (
+    clear_published_checks,
+    format_check_annotations,
+    format_check_summary,
+    get_published_checks,
+    publish_check,
+)
+from app.services.engines.patch_verifier import PatchVerifier, patch_verifier
+from app.services.engines.remediation_engine import RemediationEngine, remediation_engine, REMEDIATION_PROMPT
+
 # Singleton instances
 static_analyzer = StaticAnalyzer()
 dependency_intel = DependencyIntelligence()
@@ -266,10 +276,21 @@ __all__ = [
     "sandbox_runner",
     "barqai_engine",
     "orchestrator",
+    "patch_verifier",
+    "remediation_engine",
+    "publish_check",
+    "format_check_summary",
+    "format_check_annotations",
+    "get_published_checks",
+    "clear_published_checks",
     "StaticAnalyzer",
     "DependencyIntelligence",
     "WorkflowLinter",
     "SandboxRunner",
     "BarqAIEngine",
     "ScanOrchestrator",
+    "PatchVerifier",
+    "RemediationEngine",
+    "REMEDIATION_PROMPT",
 ]
+

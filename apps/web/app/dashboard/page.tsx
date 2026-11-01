@@ -329,9 +329,34 @@ function DashboardContent() {
         </div>
       </div>
 
-      {/* Repositories Strip */}
-      <section className="flex flex-col gap-3">
-        <div className="flex items-center justify-between text-xs text-text-dim uppercase tracking-wider">
+      {/* BARQAI Chat & Code Rewriter Feature Banner */}
+      <div className="border border-lime bg-lime/5 p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-[0_0_20px_rgba(204,255,0,0.06)]">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 border border-lime bg-lime/20 flex items-center justify-center text-lime text-xl font-bold flex-shrink-0">
+            💬
+          </div>
+          <div>
+            <div className="text-xs font-bold text-lime uppercase tracking-wider flex items-center gap-2">
+              <span>NEW: BARQAI COPILOT & CODE REWRITER</span>
+              <span className="text-[9px] bg-lime text-bg px-1.5 py-0.5 font-extrabold uppercase">LIVE</span>
+            </div>
+            <p className="text-xs text-text-dim mt-0.5">
+              Have a code error, suspicious dependency, or CI/CD workflow finding? Chat directly with BARQAI to explain root causes and get secure unified git diff rewrites.
+            </p>
+          </div>
+        </div>
+        <Link
+          href="/chat"
+          className="bg-lime hover:bg-lime-muted text-bg font-extrabold text-xs px-4 py-2 uppercase tracking-wider flex items-center gap-2 whitespace-nowrap transition-colors"
+        >
+          <span>OPEN BARQAI CHAT</span>
+          <span>→</span>
+        </Link>
+      </div>
+
+      {/* Repositories Section */}
+      <section className="flex flex-col gap-4">
+        <div className="text-xs text-text-dim uppercase tracking-wider flex items-center justify-between">
           <span className="font-bold">Connected Repositories ({repos.length})</span>
           {!repos.some((r) => r.full_name === "codefort-sec/vulnerable-test-repo") && (
             <button

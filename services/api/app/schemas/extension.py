@@ -21,6 +21,7 @@ ExtensionFindingsCount = FindingsCount
 class ExtensionPRStatusResponse(BaseModel):
     repository: str = Field(..., description="Repository full name, e.g. owner/repo")
     pull_request: int = Field(..., description="PR number")
+    scan_id: Optional[str] = Field(None, description="Scan UUID")
     status: ScanStatus = Field(..., description="Scan status")
     verdict: Verdict = Field(..., description="Calculated verdict")
     risk_score: Optional[int] = Field(None, ge=0, le=100, description="Risk score 0-100")
@@ -52,6 +53,7 @@ ExtensionFindingsListResponse = ExtensionFindingsResponse
 class ExtensionSummaryResponse(BaseModel):
     repository: str
     pull_request: int
+    scan_id: Optional[str] = Field(None, description="Scan UUID")
     verdict: Verdict
     risk_score: Optional[int] = None
     summary: Optional[ScanSummary] = None

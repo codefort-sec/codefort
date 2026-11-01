@@ -4,6 +4,7 @@ import {
   ExtensionLineFinding,
   ExtensionMessage,
   ExtensionPRStatusResponse,
+  ExtensionRemediationResponse,
   ExtensionResponse,
   ExtensionSummaryResponse,
 } from "../shared/types";
@@ -11,7 +12,7 @@ import "./content.css";
 
 const BADGE_ROOT_ID = "codefort-guard-badge-root";
 
-// Parse GitHub PR URL: https://github.com/:owner/:repo/pull/:number
+// Parse GitHub PR URL: https://github.com/:owner/:repo/pull/:number[/...]
 function parsePRUrl(url: string): { repo: string; pr: number } | null {
   const match = url.match(/github\.com\/([^/]+)\/([^/]+)\/pull\/(\d+)/);
   if (!match) return null;
@@ -56,11 +57,18 @@ function findTargetHeader(): { parent: Element; insertBefore?: Element | null } 
 }
 
 let activeBadgeRoot: ReactDOM.Root | null = null;
+let injectionRetryTimer: ReturnType<typeof setTimeout> | null = null;
 let cachedFindings: ExtensionLineFinding[] = [];
 let diffObserver: MutationObserver | null = null;
 let diffDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+let currentObservingPR: string | null = null;
 
 async function injectPRBadge(repo: string, pr: number, retryCount = 0, force = false) {
+  if (injectionRetryTimer) {
+    clearTimeout(injectionRetryTimer);
+    injectionRetryTimer = null;
+  }
+
   // 1. Remove existing badge if present
   const existing = document.getElementById(BADGE_ROOT_ID);
   if (existing) {
@@ -76,7 +84,7 @@ async function injectPRBadge(repo: string, pr: number, retryCount = 0, force = f
 
   if (!target || !target.parent) {
     if (retryCount < 24) {
-      setTimeout(() => injectPRBadge(repo, pr, retryCount + 1, force), 250);
+      injectionRetryTimer = setTimeout(() => injectPRBadge(repo, pr, retryCount + 1, force), 250);
       return;
     }
     console.warn("CodeFort Guard: Header anchor not found after retries, mounting fallback to body");
@@ -140,7 +148,7 @@ async function injectPRBadge(repo: string, pr: number, retryCount = 0, force = f
 
     // 5. Fetch line findings and set up dynamic diff observer
     loadAndApplyFindings(repo, pr, force);
-    ensureDiffObserver();
+    ensureDiffObserver(repo, pr);
 
     // 6. Asynchronously fetch rich AI summary in background without blocking UI
     const summaryMsg: ExtensionMessage = { type: "GET_PR_SUMMARY", repo, pr, force };
@@ -184,14 +192,14 @@ async function loadAndApplyFindings(repo: string, pr: number, force = false) {
 
     if (findingsRes?.success && findingsRes.data?.findings) {
       cachedFindings = findingsRes.data.findings;
-      applyLineWarnings(cachedFindings);
+      applyLineWarnings(cachedFindings, repo, pr);
     }
   } catch {
     // Non-blocking for diff line warnings
   }
 }
 
-function applyLineWarnings(findings: ExtensionLineFinding[]) {
+function applyLineWarnings(findings: ExtensionLineFinding[], repo: string, pr: number) {
   if (!findings || findings.length === 0) return;
 
   findings.forEach((finding) => {
@@ -261,6 +269,127 @@ function applyLineWarnings(findings: ExtensionLineFinding[]) {
         }
 
         box.appendChild(contentDiv);
+
+        // Phase 4: Interactive 1-Click Fix with BARQAI button
+        const fixBtn = document.createElement("button");
+        fixBtn.type = "button";
+        fixBtn.className = "codefort-diff-fix-btn";
+        fixBtn.textContent = "⚡ Fix with BARQAI";
+
+        fixBtn.onclick = async (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+
+          const existingDrawer = box.querySelector(".codefort-inline-remediation-drawer");
+          if (existingDrawer) {
+            existingDrawer.remove();
+            fixBtn.textContent = "⚡ Fix with BARQAI";
+            return;
+          }
+
+          fixBtn.textContent = "Synthesizing Fix...";
+          try {
+            const remRes = await chrome.runtime.sendMessage<
+              ExtensionMessage,
+              ExtensionResponse<ExtensionRemediationResponse>
+            >({ type: "GET_PR_REMEDIATION", repo, pr });
+
+            if (!remRes.success || !remRes.data) {
+              fixBtn.textContent = "No Fix Available";
+              return;
+            }
+
+            const data = remRes.data;
+            const proposal =
+              data.proposals?.find(
+                (p) => p.finding_id === finding.id || p.rule_id === finding.rule_id
+              ) || data.proposals?.[0];
+
+            if (!proposal) {
+              fixBtn.textContent = "No Patch Found";
+              return;
+            }
+
+            fixBtn.textContent = "Hide Fix";
+
+            const drawer = document.createElement("div");
+            drawer.className = "codefort-inline-remediation-drawer";
+
+            const header = document.createElement("div");
+            header.className = "codefort-drawer-header";
+            header.innerHTML = `
+              <span style="font-weight:700;color:#d7ff35;font-size:10px;">BARQAI VERIFIED FIX (${proposal.rule_id})</span>
+              <span class="codefort-verified-pill">${proposal.verification_status || "verified"}</span>
+            `;
+            drawer.appendChild(header);
+
+            const grid = document.createElement("div");
+            grid.className = "codefort-drawer-code-grid";
+
+            const beforeBox = document.createElement("div");
+            beforeBox.className = "codefort-code-before";
+            beforeBox.textContent = `// Original Vulnerable\n${proposal.original_code}`;
+            grid.appendChild(beforeBox);
+
+            const afterBox = document.createElement("div");
+            afterBox.className = "codefort-code-after";
+            afterBox.textContent = `// BARQAI Verified Fix\n${proposal.suggested_code}`;
+            grid.appendChild(afterBox);
+
+            drawer.appendChild(grid);
+
+            const actions = document.createElement("div");
+            actions.className = "codefort-drawer-actions";
+
+            const copyBtn = document.createElement("button");
+            copyBtn.type = "button";
+            copyBtn.className = "codefort-copy-fix-btn";
+            copyBtn.textContent = "Copy Patch";
+            copyBtn.onclick = () => {
+              navigator.clipboard.writeText(proposal.unified_diff || data.clean_patch || "");
+              copyBtn.textContent = "Copied!";
+              setTimeout(() => {
+                copyBtn.textContent = "Copy Patch";
+              }, 2000);
+            };
+            actions.appendChild(copyBtn);
+
+            const applyBtn = document.createElement("button");
+            applyBtn.type = "button";
+            applyBtn.className = "codefort-apply-fix-btn";
+            applyBtn.textContent = "Apply Fix to PR Branch ↗";
+            applyBtn.onclick = async () => {
+              applyBtn.disabled = true;
+              applyBtn.textContent = "Applying...";
+              try {
+                const applyRes = await chrome.runtime.sendMessage<
+                  ExtensionMessage,
+                  ExtensionResponse<{ status: string; message: string }>
+                >({ type: "APPLY_PR_REMEDIATION", repo, pr });
+
+                if (applyRes.success) {
+                  applyBtn.textContent = "✓ Fix Applied to Branch!";
+                  applyBtn.style.background = "#3fb950";
+                  applyBtn.style.color = "#070807";
+                } else {
+                  applyBtn.textContent = "Failed to Apply";
+                  applyBtn.disabled = false;
+                }
+              } catch {
+                applyBtn.textContent = "Error Applying";
+                applyBtn.disabled = false;
+              }
+            };
+            actions.appendChild(applyBtn);
+
+            drawer.appendChild(actions);
+            contentDiv.appendChild(drawer);
+          } catch {
+            fixBtn.textContent = "Fix Failed";
+          }
+        };
+
+        box.appendChild(fixBtn);
         warningRow.appendChild(cell);
         cell.appendChild(box);
 
@@ -270,8 +399,17 @@ function applyLineWarnings(findings: ExtensionLineFinding[]) {
   });
 }
 
-function ensureDiffObserver() {
-  if (diffObserver) return;
+function ensureDiffObserver(repo: string, pr: number) {
+  const prKey = `${repo}#${pr}`;
+  if (currentObservingPR === prKey && diffObserver) {
+    return;
+  }
+  currentObservingPR = prKey;
+
+  if (diffObserver) {
+    diffObserver.disconnect();
+    diffObserver = null;
+  }
 
   diffObserver = new MutationObserver(() => {
     if (cachedFindings.length === 0) return;
@@ -280,12 +418,13 @@ function ensureDiffObserver() {
       clearTimeout(diffDebounceTimer);
     }
     diffDebounceTimer = setTimeout(() => {
-      applyLineWarnings(cachedFindings);
+      applyLineWarnings(cachedFindings, repo, pr);
     }, 250);
   });
 
   const diffContainer =
     document.querySelector("#files_bucket") ||
+    document.querySelector("#files") ||
     document.querySelector(".js-diff-progressive-container") ||
     document.querySelector(".diff-view") ||
     document.body;
@@ -301,7 +440,16 @@ function handleNavigation() {
   if (prInfo) {
     injectPRBadge(prInfo.repo, prInfo.pr);
   } else {
-    // If navigated away from a PR page, cleanup
+    // If navigated away from a PR page, cleanup badge and observers
+    if (injectionRetryTimer) {
+      clearTimeout(injectionRetryTimer);
+      injectionRetryTimer = null;
+    }
+    if (diffObserver) {
+      diffObserver.disconnect();
+      diffObserver = null;
+      currentObservingPR = null;
+    }
     const existing = document.getElementById(BADGE_ROOT_ID);
     if (existing) {
       if (activeBadgeRoot) {
@@ -310,24 +458,27 @@ function handleNavigation() {
       }
       existing.remove();
     }
-    if (diffObserver) {
-      diffObserver.disconnect();
-      diffObserver = null;
-    }
     cachedFindings = [];
   }
 }
 
-// 1. Initial execution on page load
+// 1. Listen for background service worker awakening triggers
+chrome.runtime.onMessage.addListener((message: any) => {
+  if (message.type === "AWAKE_PR_SCAN") {
+    handleNavigation();
+  }
+});
+
+// 2. Initial execution on page load
 handleNavigation();
 
-// 2. Listen to GitHub Turbo / SPA events
+// 3. Listen to GitHub Turbo / SPA events
 document.addEventListener("turbo:render", handleNavigation);
 document.addEventListener("turbo:load", handleNavigation);
 document.addEventListener("pjax:end", handleNavigation);
 window.addEventListener("popstate", handleNavigation);
 
-// 3. Fallback URL change observer
+// 4. Fallback URL change observer
 let lastUrl = window.location.href;
 const urlObserver = new MutationObserver(() => {
   if (window.location.href !== lastUrl) {

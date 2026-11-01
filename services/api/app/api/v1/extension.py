@@ -15,61 +15,55 @@ from app.schemas.extension import (
     ExtensionSummaryResponse,
     PairingTokenResponse,
 )
+from app.schemas.remediation import RemediationApplyResponse, RemediationResponse
 from app.services.mock_engine import mock_store
+
+from datetime import datetime, timezone
 
 router = APIRouter(prefix="/extension", tags=["Extension"])
 
 # In-memory pairing tokens for skeleton/dev
-_active_pairing_tokens = set()
-_pairing_tokens_status: dict = {
-    "demo-pairing-token": {"token": "demo-pairing-token", "status": "paired"}
-}
+_active_pairing_tokens: dict = {}
+_paired_tokens: dict = {"demo-pairing-token": {"paired_at": datetime.now(timezone.utc)}}
 
 
 @router.post("/pairing-tokens", response_model=PairingTokenResponse)
 async def create_pairing_token():
     """Generates a short-lived single-use pairing token from dashboard."""
-    import time
     token = f"pair_{secrets.token_hex(16)}"
-    _active_pairing_tokens.add(token)
-    _pairing_tokens_status[token] = {
-        "token": token,
-        "status": "pending",
-        "created_at": time.time(),
-        "paired_at": None,
-    }
+    _active_pairing_tokens[token] = {"created_at": datetime.now(timezone.utc), "status": "pending"}
     return PairingTokenResponse(pairing_token=token, expires_in_seconds=300)
 
 
 @router.get("/pairing-tokens/{token}/status")
-async def get_pairing_token_status(token: str):
-    """Checks the real-time pairing status of a token."""
-    import time
-    record = _pairing_tokens_status.get(token)
-    if not record:
-        if token in _active_pairing_tokens:
-            return {"token": token, "status": "pending"}
-        return {"token": token, "status": "expired"}
+async def get_pairing_token_status_path(token: str):
+    """Checks the real-time pairing status of a token via path parameter."""
+    if token in _paired_tokens or token == "demo-pairing-token":
+        return {"token": token, "status": "paired", "paired": True}
+    if token in _active_pairing_tokens:
+        return {"token": token, "status": "pending", "paired": False}
+    return {"token": token, "status": "expired", "paired": False}
 
-    if record.get("status") == "pending" and time.time() - record.get("created_at", 0) > 300:
-        record["status"] = "expired"
-        _active_pairing_tokens.discard(token)
 
-    return record
+@router.get("/pairing-status")
+async def get_pairing_status(token: str = Query(..., description="Pairing token to verify")):
+    """Live polling endpoint for web dashboard to verify whether extension completed pairing."""
+    if token in _paired_tokens or token == "demo-pairing-token":
+        return {"pairing_token": token, "status": "paired", "paired": True}
+    if token in _active_pairing_tokens:
+        return {"pairing_token": token, "status": "pending", "paired": False}
+    return {"pairing_token": token, "status": "expired", "paired": False}
 
 
 @router.post("/pair", response_model=ExtensionPairResponse)
 async def pair_extension(req: ExtensionPairRequest):
     """Exchanges a valid pairing token for a scoped extension credential."""
-    import time
-    if req.pairing_token not in _active_pairing_tokens:
-        if req.pairing_token != "demo-pairing-token":
-            raise NotFoundException(message="Invalid or expired pairing token.", code="INVALID_PAIRING_TOKEN")
-    else:
-        _active_pairing_tokens.remove(req.pairing_token)
-        if req.pairing_token in _pairing_tokens_status:
-            _pairing_tokens_status[req.pairing_token]["status"] = "paired"
-            _pairing_tokens_status[req.pairing_token]["paired_at"] = time.time()
+    if req.pairing_token not in _active_pairing_tokens and req.pairing_token != "demo-pairing-token":
+        raise NotFoundException(message="Invalid or expired pairing token.", code="INVALID_PAIRING_TOKEN")
+
+    _active_pairing_tokens.pop(req.pairing_token, None)
+    _paired_tokens[req.pairing_token] = {"paired_at": datetime.now(timezone.utc)}
+
 
     return ExtensionPairResponse(
         access_token=f"ext_{secrets.token_hex(24)}",
@@ -105,6 +99,7 @@ async def get_pr_status(
     return ExtensionPRStatusResponse(
         repository=scan.repository,
         pull_request=scan.pull_request,
+        scan_id=scan.id,
         status=scan.status,
         verdict=scan.verdict,
         risk_score=scan.risk_score,
@@ -161,7 +156,38 @@ async def get_pr_summary(
     return ExtensionSummaryResponse(
         repository=scan.repository,
         pull_request=scan.pull_request,
+        scan_id=scan.id,
         verdict=scan.verdict,
         risk_score=scan.risk_score,
         summary=scan.summary,
     )
+
+
+@router.get("/remediation", response_model=RemediationResponse)
+async def get_extension_remediation(
+    repo: str = Query(..., description="Repository owner/name"),
+    pr: int = Query(..., description="Pull request number", ge=1),
+):
+    """Returns intelligent remediation proposals and clean unified patch for PR."""
+    from app.api.v1.remediation import get_remediation_patch
+
+    scan = mock_store.get_latest_scan_for_pr(repo, pr)
+    if not scan:
+        scan = await mock_store.trigger_scan(repo, pr)
+
+    return await get_remediation_patch(scan.id)
+
+
+@router.post("/remediation/apply", response_model=RemediationApplyResponse)
+async def apply_extension_remediation(
+    repo: str = Query(..., description="Repository owner/name"),
+    pr: int = Query(..., description="Pull request number", ge=1),
+):
+    """Applies verified remediation patch for PR directly from extension."""
+    from app.api.v1.remediation import apply_remediation_patch
+
+    scan = mock_store.get_latest_scan_for_pr(repo, pr)
+    if not scan:
+        scan = await mock_store.trigger_scan(repo, pr)
+
+    return await apply_remediation_patch(scan.id)

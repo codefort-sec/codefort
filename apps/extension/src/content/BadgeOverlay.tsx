@@ -245,7 +245,7 @@ export const BadgeOverlay: React.FC<BadgeOverlayProps> = ({
           <div className="codefort-summary-header">
             <div className="codefort-summary-brand">
               <span className="codefort-brand-pill">BARQAI</span>
-              <span className="codefort-summary-title">Security Analysis</span>
+              <span className="codefort-summary-title">Barq-AI Security Analysis</span>
             </div>
             <button
               type="button"

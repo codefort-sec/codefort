@@ -564,6 +564,123 @@
   border-color: #a2a59a;
 }
 
+/* Inline Remediation Drawer */
+.codefort-diff-fix-btn {
+  background: #d7ff35;
+  color: #070807;
+  border: 1px solid #d7ff35;
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  cursor: pointer;
+  border-radius: 3px;
+  white-space: nowrap;
+  transition: all 0.15s ease-in-out;
+}
+
+.codefort-diff-fix-btn:hover {
+  background: #bce628;
+  box-shadow: 0 0 6px rgba(215, 255, 53, 0.4);
+}
+
+.codefort-inline-remediation-drawer {
+  margin-top: 8px;
+  padding: 8px;
+  background: #050605;
+  border: 1px solid #343832;
+  border-radius: 4px;
+}
+
+.codefort-drawer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+  font-size: 10px;
+}
+
+.codefort-verified-pill {
+  color: #3fb950;
+  background: rgba(63, 185, 80, 0.12);
+  border: 1px solid rgba(63, 185, 80, 0.3);
+  padding: 1px 5px;
+  font-weight: 700;
+  border-radius: 2px;
+  text-transform: uppercase;
+}
+
+.codefort-drawer-code-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.codefort-code-before,
+.codefort-code-after {
+  padding: 6px;
+  border-radius: 3px;
+  font-size: 10px;
+  font-family: inherit;
+  overflow-x: auto;
+  white-space: pre;
+  line-height: 1.35;
+}
+
+.codefort-code-before {
+  background: rgba(248, 81, 73, 0.1);
+  border: 1px solid rgba(248, 81, 73, 0.3);
+  color: #ff9b94;
+}
+
+.codefort-code-after {
+  background: rgba(63, 185, 80, 0.1);
+  border: 1px solid rgba(63, 185, 80, 0.3);
+  color: #7ee787;
+}
+
+.codefort-drawer-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.codefort-apply-fix-btn {
+  background: #d7ff35;
+  color: #070807;
+  border: none;
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  cursor: pointer;
+  border-radius: 3px;
+}
+
+.codefort-apply-fix-btn:hover {
+  background: #bce628;
+}
+
+.codefort-copy-fix-btn {
+  background: transparent;
+  color: #a2a59a;
+  border: 1px solid #343832;
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 4px 10px;
+  cursor: pointer;
+  border-radius: 3px;
+}
+
+.codefort-copy-fix-btn:hover {
+  color: #f2f2ed;
+  border-color: #a2a59a;
+}
+
 /* 1-Click Clean Remediation Patch Box */
 .codefort-patch-container {
   margin-top: 10px;
@@ -630,3 +747,21 @@
   word-break: break-all;
 }
 
+.codefort-copy-fix-btn {
+  background: #141714;
+  border: 1px solid #343832;
+  color: #a2a59a;
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 4px 8px;
+  cursor: pointer;
+  border-radius: 3px;
+  transition: all 0.15s ease;
+}
+
+.codefort-copy-fix-btn:hover {
+  border-color: #a2a59a;
+  color: #f2f2ed;
+}

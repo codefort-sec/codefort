@@ -53,6 +53,7 @@ export default function SettingsPage() {
   async function handleGenerateToken() {
     setLoading(true);
     setCopied(false);
+    setIsPaired(false);
     try {
       const res = await createPairingToken();
       setPairingToken(res.pairing_token);
@@ -160,9 +161,12 @@ export default function SettingsPage() {
                   {copied ? "COPIED ✓" : "COPY"}
                 </button>
               </div>
-              <div className="flex items-center gap-2 text-[10px] text-lime mt-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-lime animate-ping" />
-                <span>Waiting for extension to pair... Paste this token into the CodeFort Guard extension popup.</span>
+              <div className="flex items-center justify-between text-[10px] text-text-dim mt-1">
+                <span>Paste this token into the CodeFort Guard extension popup to complete pairing.</span>
+                <span className="text-lime flex items-center gap-1.5 font-bold">
+                  <span className="w-1.5 h-1.5 rounded-full bg-lime animate-ping" />
+                  Waiting for extension...
+                </span>
               </div>
             </div>
           ) : (

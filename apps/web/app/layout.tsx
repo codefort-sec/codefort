@@ -25,7 +25,7 @@ export default function RootLayout({
             <div className="flex items-center gap-3">
               <span className="text-lime font-bold">CODEFORT_SYS // 2026</span>
               <span>•</span>
-              <span>BARQAI EXPLANATION ENGINE ENABLED</span>
+              <span>Barq-AI EXPLANATION ENGINE ENABLED</span>
             </div>
             <div className="flex items-center gap-4">
               <span>STATUS: ALL ENGINES OPERATIONAL</span>

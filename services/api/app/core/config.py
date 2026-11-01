@@ -44,6 +44,7 @@ class Settings(BaseSettings):
     GITHUB_CLIENT_SECRET: str = ""
     GITHUB_APP_ID: str = ""
     GITHUB_APP_PRIVATE_KEY: str = ""
+    GITHUB_PRIVATE_KEY_PATH: str = "./private-key.pem"
     GITHUB_WEBHOOK_SECRET: str = "development-webhook-secret"
     GITHUB_TOKEN: str = ""
 

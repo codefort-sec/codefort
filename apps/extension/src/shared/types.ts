@@ -36,6 +36,7 @@ export interface FindingsCount {
 export interface ExtensionPRStatusResponse {
   repository: string;
   pull_request: number;
+  scan_id?: string | null;
   status: ScanStatus;
   verdict: Verdict;
   risk_score?: number | null;
@@ -64,9 +65,33 @@ export interface ExtensionFindingsResponse {
 export interface ExtensionSummaryResponse {
   repository: string;
   pull_request: number;
+  scan_id?: string | null;
   verdict: Verdict;
   risk_score?: number | null;
   summary?: ScanSummary | null;
+}
+
+export interface ExtensionRemediationProposal {
+  finding_id: string;
+  rule_id: string;
+  title: string;
+  file_path: string;
+  line_start: number;
+  original_code: string;
+  suggested_code: string;
+  unified_diff: string;
+  explanation: string;
+  verification_status: "verified" | "failed" | "unverified";
+}
+
+export interface ExtensionRemediationResponse {
+  scan_id: string;
+  repository: string;
+  pull_request: number;
+  clean_patch?: string | null;
+  proposals: ExtensionRemediationProposal[];
+  overall_verification_status: "verified" | "failed" | "review_required";
+  can_auto_apply: boolean;
 }
 
 export interface ExtensionConfig {
@@ -76,14 +101,16 @@ export interface ExtensionConfig {
 }
 
 // Background <-> Content Script / Popup Messaging
-export type ExtensionMessage =
   | { type: "GET_PR_STATUS"; repo: string; pr: number; force?: boolean }
   | { type: "GET_PR_FINDINGS"; repo: string; pr: number; force?: boolean }
   | { type: "GET_PR_SUMMARY"; repo: string; pr: number; force?: boolean }
+  | { type: "GET_PR_REMEDIATION"; repo: string; pr: number; force?: boolean }
+  | { type: "APPLY_PR_REMEDIATION"; repo: string; pr: number }
   | { type: "TRIGGER_PR_SCAN"; repo: string; pr: number }
   | { type: "CHECK_PAIRING_STATUS" }
   | { type: "PAIR_WITH_TOKEN"; pairingToken: string }
-  | { type: "UNPAIR" };
+  | { type: "UNPAIR" }
+  | { type: "AWAKE_PR_SCAN"; repo: string; pr: number; status?: ExtensionPRStatusResponse | null };
 
 export type ExtensionResponse<T = any> =
   | { success: true; data: T }
