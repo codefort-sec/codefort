@@ -2,7 +2,6 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
-import { Navbar } from "@/components/Navbar";
 import {
   BarqAIChatResponse,
   ChatMessage,
@@ -153,11 +152,8 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="min-h-screen bg-bg text-text font-mono flex flex-col">
-      <Navbar />
-
-      <main className="max-w-7xl mx-auto px-4 py-6 w-full flex-1 flex flex-col">
-        {/* Header HUD */}
+    <div className="max-w-7xl mx-auto px-4 py-6 w-full flex-1 flex flex-col font-mono">
+      {/* Header HUD */}
         <div className="border border-border bg-surface p-4 mb-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-lg">
           <div>
             <div className="flex items-center gap-2">
@@ -509,7 +505,6 @@ export default function ChatPage() {
             </div>
           </div>
         </div>
-      </main>
     </div>
   );
 }
