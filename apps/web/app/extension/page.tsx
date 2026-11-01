@@ -1,14 +1,52 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { createPairingToken } from "@/lib/api";
+import { apiFetch, createPairingToken } from "@/lib/api";
 
 export default function ExtensionGuidePage() {
   const [activeTab, setActiveTab] = useState<"chrome" | "firefox">("chrome");
   const [pairingToken, setPairingToken] = useState<string | null>(null);
   const [generating, setGenerating] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [isPaired, setIsPaired] = useState(false);
+  const [pairedAt, setPairedAt] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("codefort_extension_paired");
+      if (stored === "true") {
+        setIsPaired(true);
+        setPairedAt(localStorage.getItem("codefort_extension_paired_at") || "Active");
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!pairingToken || isPaired) return;
+
+    const interval = setInterval(async () => {
+      try {
+        const res = await apiFetch<{ token: string; status: string; paired_at?: number }>(
+          `/api/v1/extension/pairing-tokens/${pairingToken}/status`
+        );
+        if (res?.status === "paired") {
+          setIsPaired(true);
+          const timeStr = new Date().toLocaleTimeString();
+          setPairedAt(timeStr);
+          if (typeof window !== "undefined") {
+            localStorage.setItem("codefort_extension_paired", "true");
+            localStorage.setItem("codefort_extension_paired_at", timeStr);
+          }
+          clearInterval(interval);
+        }
+      } catch {
+        // Non-blocking status polling
+      }
+    }, 1500);
+
+    return () => clearInterval(interval);
+  }, [pairingToken, isPaired]);
 
   async function handleGenerateToken() {
     setGenerating(true);
@@ -20,6 +58,16 @@ export default function ExtensionGuidePage() {
       console.error("Failed to generate token:", err);
     } finally {
       setGenerating(false);
+    }
+  }
+
+  function handleUnpair() {
+    setIsPaired(false);
+    setPairingToken(null);
+    setPairedAt(null);
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("codefort_extension_paired");
+      localStorage.removeItem("codefort_extension_paired_at");
     }
   }
 
@@ -48,7 +96,7 @@ export default function ExtensionGuidePage() {
           </div>
 
           <h1 className="text-2xl md:text-4xl font-black text-text uppercase tracking-tight">
-            INSTALL CODEFORT GUARD <span className="text-lime">v0.1.2</span>
+            INSTALL CODEFORT GUARD <span className="text-lime">v0.1.3</span>
           </h1>
 
           <p className="text-xs md:text-sm text-text-muted max-w-3xl leading-relaxed">
@@ -57,12 +105,12 @@ export default function ExtensionGuidePage() {
 
           <div className="flex flex-wrap items-center gap-4 pt-2">
             <a
-              href="https://github.com/codefort-sec/codefort/releases/tag/v0.1.2"
+              href="https://github.com/codefort-sec/codefort/releases/tag/v0.1.3"
               target="_blank"
               rel="noopener noreferrer"
               className="bg-lime hover:bg-lime-muted text-bg font-extrabold text-xs px-4 py-2.5 uppercase tracking-wider flex items-center gap-2 transition-colors"
             >
-              <span>GitHub Release v0.1.2</span>
+              <span>GitHub Release v0.1.3</span>
               <span>↗</span>
             </a>
 
@@ -253,10 +301,50 @@ export default function ExtensionGuidePage() {
           </p>
         </div>
 
-        <div className="border border-border bg-bg p-5 flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="flex flex-col gap-2 w-full md:w-auto flex-1">
-            <span className="text-xs font-bold text-text-dim uppercase">One-Click Pairing Token:</span>
-            {pairingToken ? (
+        <div className="border border-border bg-bg p-5 flex flex-col gap-4">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-text-dim uppercase">PAIRING CREDENTIAL STATUS</span>
+            <span className={`text-[11px] font-bold ${isPaired ? "text-emerald-400" : "text-lime"}`}>
+              {isPaired ? "AUTHENTICATED // LIVE" : "SINGLE_USE / 300 SECONDS"}
+            </span>
+          </div>
+
+          {isPaired ? (
+            <div className="border border-emerald-500/40 bg-emerald-500/10 p-4 flex flex-col gap-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
+                  <span className="text-emerald-400 font-extrabold text-xs uppercase tracking-wide">
+                    ✓ EXTENSION PAIRED &amp; ACTIVE
+                  </span>
+                </div>
+                {pairedAt && (
+                  <span className="text-[10px] text-text-dim">Paired at {pairedAt}</span>
+                )}
+              </div>
+              <p className="text-xs text-text leading-relaxed">
+                Your CodeFort Guard extension is authenticated and listening to GitHub PR events. Real-time malicious pull request banners and inline diff forensics will appear on GitHub.
+              </p>
+              <div className="flex flex-wrap items-center gap-3 pt-2 border-t border-emerald-500/20">
+                <a
+                  href="https://github.com/codefort-sec/vulnerable-test-repo/pull/1"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="bg-lime hover:bg-lime-muted text-bg font-extrabold text-xs px-3.5 py-1.5 uppercase transition-colors"
+                >
+                  Test On Demo PR #1 ↗
+                </a>
+                <button
+                  type="button"
+                  onClick={handleUnpair}
+                  className="border border-border hover:border-danger text-text-muted hover:text-danger text-xs px-3 py-1.5 uppercase transition-colors"
+                >
+                  Unpair / Generate New Token
+                </button>
+              </div>
+            </div>
+          ) : pairingToken ? (
+            <div className="flex flex-col gap-2">
               <div className="flex items-center gap-2">
                 <input
                   type="text"
@@ -272,23 +360,26 @@ export default function ExtensionGuidePage() {
                   {copied ? "COPIED ✓" : "COPY"}
                 </button>
               </div>
-            ) : (
+              <div className="flex items-center gap-2 text-[10px] text-lime mt-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-lime animate-ping" />
+                <span>Waiting for extension to pair... Paste this token into the CodeFort Guard extension popup.</span>
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-center justify-between">
               <p className="text-xs text-text-muted">
                 Click below to generate a single-use token valid for 300 seconds. Or enter <code className="text-lime">demo-pairing-token</code> in the popup for instant testing.
               </p>
-            )}
-          </div>
-
-          <div className="shrink-0">
-            <button
-              type="button"
-              disabled={generating}
-              onClick={handleGenerateToken}
-              className="bg-lime hover:bg-lime-muted text-bg font-extrabold text-xs px-5 py-3 uppercase tracking-wider transition-colors disabled:opacity-50"
-            >
-              {generating ? "GENERATING..." : "GENERATE PAIRING TOKEN ↗"}
-            </button>
-          </div>
+              <button
+                type="button"
+                disabled={generating}
+                onClick={handleGenerateToken}
+                className="bg-lime hover:bg-lime-muted text-bg font-extrabold text-xs px-5 py-3 uppercase tracking-wider transition-colors disabled:opacity-50 shrink-0"
+              >
+                {generating ? "GENERATING..." : "GENERATE PAIRING TOKEN ↗"}
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Pairing Flow Diagram */}

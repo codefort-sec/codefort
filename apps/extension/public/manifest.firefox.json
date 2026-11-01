@@ -5,7 +5,8 @@
   "description": "Real-time malicious PR detector, dependency risk checker, and security review copilot.",
   "permissions": [
     "storage",
-    "activeTab"
+    "activeTab",
+    "tabs"
   ],
   "host_permissions": [
     "https://github.com/*",
@@ -14,8 +15,7 @@
     "http://127.0.0.1:8000/*"
   ],
   "background": {
-    "scripts": ["background.js"],
-    "type": "module"
+    "scripts": ["background.js"]
   },
   "content_scripts": [
     {

@@ -178,16 +178,64 @@ function DashboardContent() {
     }
   }
 
-  async function handleCustomScan(e: React.FormEvent) {
-    e.preventDefault();
-    const prNum = parseInt(customPRInput.trim(), 10);
-    if (isNaN(prNum) || prNum < 1 || !selectedRepo) return;
+  async function handleCustomScan(e?: React.FormEvent, directInput?: string) {
+    if (e) e.preventDefault();
+    const input = (directInput || customPRInput).trim();
+    if (!input) return;
+
+    let targetRepo = selectedRepo;
+    let prNum: number | null = null;
+
+    // 1. Full GitHub URL: https://github.com/owner/repo/pull/123
+    const urlMatch = input.match(/github\.com\/([^/]+)\/([^/]+)\/pull\/(\d+)/);
+    if (urlMatch) {
+      targetRepo = `${urlMatch[1]}/${urlMatch[2]}`;
+      prNum = parseInt(urlMatch[3], 10);
+    } else {
+      // 2. Short notation: owner/repo#123
+      const shortMatch = input.match(/^([^/]+)\/([^#]+)#(\d+)$/);
+      if (shortMatch) {
+        targetRepo = `${shortMatch[1]}/${shortMatch[2]}`;
+        prNum = parseInt(shortMatch[3], 10);
+      } else {
+        // 3. Number only: 123
+        const cleanNum = input.replace(/^#/, "");
+        const numOnly = parseInt(cleanNum, 10);
+        if (!isNaN(numOnly) && numOnly >= 1) {
+          prNum = numOnly;
+        }
+      }
+    }
+
+    if (!prNum || prNum < 1 || !targetRepo) return;
+
     setCustomScanning(true);
     try {
-      await handleTriggerScan(prNum);
+      // If repo is different from selectedRepo, connect it locally
+      if (targetRepo !== selectedRepo) {
+        const existing = repos.find((r) => r.full_name.toLowerCase() === targetRepo.toLowerCase());
+        if (!existing) {
+          const newRepoItem: RepoItem = {
+            id: "repo_" + Math.random().toString(36).substring(2, 8),
+            full_name: targetRepo,
+            is_connected: true,
+          };
+          const updated = addLocalRepo(newRepoItem);
+          setRepos(updated);
+        }
+        setSelectedRepo(targetRepo);
+      }
+
+      setScanningPRs((prev) => ({ ...prev, [prNum!]: true }));
+      await triggerPRScan(targetRepo, prNum);
+      const prList = await apiFetch<PRItem[]>(`/api/v1/repositories/${targetRepo}/pull-requests`);
+      setPrs(prList);
       setCustomPRInput("");
+    } catch (err: any) {
+      console.error(`Failed to scan ${targetRepo}#${prNum}:`, err);
     } finally {
       setCustomScanning(false);
+      setScanningPRs((prev) => ({ ...prev, [prNum!]: false }));
     }
   }
 
@@ -412,23 +460,48 @@ function DashboardContent() {
             <span className="font-bold text-text">Pull Request Security Audits</span>
             <span className="text-lime">({prs.length})</span>
           </div>
-          <div className="flex items-center gap-3">
-            <form onSubmit={handleCustomScan} className="flex items-center gap-1.5">
-              <span className="text-[10px] text-text-dim uppercase hidden sm:inline">Audit PR:</span>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-[10px] text-text-dim uppercase hidden lg:inline">Quick Test:</span>
+            <button
+              type="button"
+              onClick={() => handleCustomScan(undefined, "codefort-sec/vulnerable-test-repo#1")}
+              className="border border-danger/40 hover:border-danger text-danger text-[10px] px-2 py-0.5 uppercase font-bold transition-colors"
+              title="Test Dropper Hook (PR #1)"
+            >
+              🚨 Demo PR #1 (Dropper)
+            </button>
+            <button
+              type="button"
+              onClick={() => handleCustomScan(undefined, "codefort-sec/vulnerable-test-repo#2")}
+              className="border border-amber-500/40 hover:border-amber-500 text-amber-500 text-[10px] px-2 py-0.5 uppercase font-bold transition-colors"
+              title="Test Typosquatting (PR #2)"
+            >
+              ⚠️ PR #2 (Typosquat)
+            </button>
+            <button
+              type="button"
+              onClick={() => handleCustomScan(undefined, "codefort-sec/clean-test-repo#1")}
+              className="border border-emerald-500/40 hover:border-emerald-500 text-emerald-400 text-[10px] px-2 py-0.5 uppercase font-bold transition-colors"
+              title="Test Clean Baseline (0 False Positives)"
+            >
+              🛡️ Clean #1
+            </button>
+
+            <form onSubmit={handleCustomScan} className="flex items-center gap-1.5 ml-1">
               <input
-                type="number"
-                min="1"
-                placeholder="#"
+                type="text"
+                placeholder="PR # or GitHub URL..."
                 value={customPRInput}
                 onChange={(e) => setCustomPRInput(e.target.value)}
-                className="w-16 bg-surface-raised border border-border focus:border-lime text-text px-2 py-1 text-[11px] font-mono outline-none"
+                className="w-36 sm:w-56 bg-surface-raised border border-border focus:border-lime text-text px-2 py-1 text-[11px] font-mono outline-none"
               />
               <button
                 type="submit"
-                disabled={customScanning || !customPRInput || !selectedRepo}
-                className="bg-lime hover:bg-lime-muted text-bg font-extrabold text-[10px] px-2.5 py-1 uppercase tracking-wider disabled:opacity-50 transition-colors cursor-pointer"
+                disabled={customScanning || !customPRInput}
+                className="bg-lime hover:bg-lime-muted text-bg font-extrabold text-[10px] px-2.5 py-1 uppercase tracking-wider disabled:opacity-50 transition-colors cursor-pointer shrink-0"
               >
-                {customScanning ? "..." : "⚡ Scan"}
+                {customScanning ? "..." : "⚡ Audit PR"}
               </button>
             </form>
           </div>

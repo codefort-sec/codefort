@@ -22,6 +22,7 @@ export interface ScanSummary {
   evidence_observed: string[];
   why_it_matters: string;
   recommended_actions?: string[];
+  clean_patch?: string | null;
 }
 
 export interface FindingsCount {

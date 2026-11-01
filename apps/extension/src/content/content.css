@@ -564,3 +564,69 @@
   border-color: #a2a59a;
 }
 
+/* 1-Click Clean Remediation Patch Box */
+.codefort-patch-container {
+  margin-top: 10px;
+  background: #080908;
+  border: 1px solid #d7ff35;
+  border-radius: 4px;
+  padding: 8px 10px;
+}
+
+.codefort-patch-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.codefort-patch-badge {
+  background: #d7ff35;
+  color: #070807;
+  font-size: 8px;
+  font-weight: 900;
+  padding: 1px 4px;
+  border-radius: 2px;
+  letter-spacing: 0.05em;
+}
+
+.codefort-patch-title {
+  font-size: 10px;
+  font-weight: 700;
+  color: #f2f2ed;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.codefort-patch-copy-btn {
+  background: #141714;
+  border: 1px solid #343832;
+  color: #d7ff35;
+  font-family: inherit;
+  font-size: 9px;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.codefort-patch-copy-btn:hover {
+  background: #d7ff35;
+  color: #070807;
+}
+
+.codefort-patch-code {
+  background: #040504;
+  border: 1px solid #222622;
+  border-radius: 2px;
+  padding: 6px 8px;
+  font-size: 10px;
+  line-height: 1.4;
+  color: #3fb950;
+  max-height: 120px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+

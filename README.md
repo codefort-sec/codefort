@@ -4,7 +4,7 @@
 [![Web Dashboard](https://img.shields.io/badge/Web_Dashboard-Vercel_Live-00ff66?style=flat-square&logo=vercel)](https://codefort-web.vercel.app)
 [![Install Guide](https://img.shields.io/badge/Install_Guide-Extension_Setup-d7ff35?style=flat-square&logo=googlechrome)](https://codefort-web.vercel.app/extension)
 [![FastAPI Core](https://img.shields.io/badge/FastAPI_Engine-Vercel_Live-00e5ff?style=flat-square&logo=fastapi)](https://codefort-lilac.vercel.app/docs)
-[![Gemini Engine](https://img.shields.io/badge/AI_Copilot-Gemini_3.5_Flash_Lite-4285F4?style=flat-square&logo=google)](https://codefort-lilac.vercel.app/docs)
+[![Barq-AI Engine](https://img.shields.io/badge/Barq--AI_Engine-Gemini_3.8_Flash_%2B_Qwen_2.5-4285F4?style=flat-square&logo=google)](https://codefort-lilac.vercel.app/docs)
 [![Extension Release](https://img.shields.io/badge/Extension_Release-v0.1.3-ff0055?style=flat-square&logo=github)](https://github.com/codefort-sec/codefort/releases/tag/v0.1.3)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue?style=flat-square)](LICENSE)
 
@@ -111,11 +111,13 @@ flowchart TD
    - Flags dangerous permission scopes (`permissions: write-all`).
    - Detects untrusted script injection vulnerabilities (e.g., inline `${{ github.event.pull_request.title }}`).
 
-4. **BARQAI Explainability & Remediation Engine**:
-   - Powered by Google Gemini (`gemini-3.5-flash-lite`) with zero-trust deterministic fallback.
-   - Generates structured, evidence-anchored narratives without hallucination:
-     - **What Changed**: Concise file and code modification summary.
-     - **Evidence Observed**: Concrete line numbers, rule matches, and indicators.
+4. **Barq-AI Multi-Provider Reasoning & Remediation Engine**:
+   - **Unified Architecture**: Primary Google Gemini (`gemini-3.8-flash`) with automatic sub-second cascade to Qwen 2.5 Coder 32B (via OpenRouter) and a 0ms deterministic fail-safe.
+   - **Zero-Hallucination Evidence Grounding**: Dynamically injects few-shot exemplar grounding from attack datasets (`dataset.jsonl`) to strictly anchor reasoning to detected AST/package telemetry.
+   - **1-Click Clean Remediation Patches**: Synthesizes verified unified git diffs (`clean_patch`) displayed directly in the Web Forensics Dashboard and in-page GitHub Extension overlay with instant 1-click clipboard copy.
+   - **Structured Explanations**:
+     - **What Changed**: High-level file and logic modification breakdown.
+     - **Evidence Observed**: Concrete line numbers, indicators, and rule triggers.
      - **Why It Matters**: Technical risk assessment (e.g. runner takeover, credential leakage).
      - **Recommended Actions**: Clear remediation steps and patch candidate preview.
 

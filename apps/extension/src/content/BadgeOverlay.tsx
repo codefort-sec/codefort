@@ -20,6 +20,7 @@ export const BadgeOverlay: React.FC<BadgeOverlayProps> = ({
   const [isOpen, setIsOpen] = useState(false);
   const [showAlertBanner, setShowAlertBanner] = useState(false);
   const [hasDismissed, setHasDismissed] = useState(false);
+  const [copiedPatch, setCopiedPatch] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Close popover when clicking outside or pressing Escape
@@ -311,6 +312,32 @@ export const BadgeOverlay: React.FC<BadgeOverlayProps> = ({
                       › {act}
                     </div>
                   ))}
+                </div>
+              )}
+
+              {summary.summary.clean_patch && (
+                <div className="codefort-patch-container">
+                  <div className="codefort-patch-header">
+                    <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                      <span className="codefort-patch-badge">1-CLICK FIX</span>
+                      <span className="codefort-patch-title">Clean Patch</span>
+                    </div>
+                    <button
+                      type="button"
+                      className="codefort-patch-copy-btn"
+                      onClick={() => {
+                        navigator.clipboard.writeText(summary.summary?.clean_patch || "");
+                        setCopiedPatch(true);
+                        setTimeout(() => setCopiedPatch(false), 2000);
+                      }}
+                      title="Copy unified git diff remediation patch"
+                    >
+                      {copiedPatch ? "✓ COPIED" : "COPY PATCH"}
+                    </button>
+                  </div>
+                  <pre className="codefort-patch-code">
+                    <code>{summary.summary.clean_patch}</code>
+                  </pre>
                 </div>
               )}
             </>

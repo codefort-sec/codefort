@@ -5,6 +5,7 @@ import {
   ExtensionMessage,
   ExtensionPRStatusResponse,
   ExtensionResponse,
+  ExtensionSummaryResponse,
 } from "../shared/types";
 
 export const App: React.FC = () => {
@@ -12,6 +13,9 @@ export const App: React.FC = () => {
   const [pairingToken, setPairingToken] = useState("");
   const [activePR, setActivePR] = useState<{ repo: string; pr: number } | null>(null);
   const [prStatus, setPRStatus] = useState<ExtensionPRStatusResponse | null>(null);
+  const [prSummary, setPRSummary] = useState<ExtensionSummaryResponse | null>(null);
+  const [customPRInput, setCustomPRInput] = useState("");
+  const [copiedPatch, setCopiedPatch] = useState(false);
   const [loading, setLoading] = useState(false);
   const [scanning, setScanning] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -29,13 +33,17 @@ export const App: React.FC = () => {
   async function detectActiveTabPR() {
     if (typeof chrome === "undefined" || !chrome.tabs?.query) {
       // Mock for local testing
-      setActivePR({ repo: "muhammadfarshi/Faar-Pos", pr: 1 });
-      fetchStatusForPR("muhammadfarshi/Faar-Pos", 1);
+      setActivePR({ repo: "codefort-sec/vulnerable-test-repo", pr: 1 });
+      fetchStatusForPR("codefort-sec/vulnerable-test-repo", 1);
       return;
     }
 
     try {
-      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      let tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+      if (!tabs || tabs.length === 0 || !tabs[0].url) {
+        tabs = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+      }
+      const tab = tabs?.[0];
       if (tab?.url) {
         const match = tab.url.match(/github\.com\/([^/]+)\/([^/]+)\/pull\/(\d+)/);
         if (match) {
@@ -53,6 +61,7 @@ export const App: React.FC = () => {
   async function fetchStatusForPR(repo: string, pr: number, force = false) {
     setLoading(true);
     setErrorMsg(null);
+    setPRSummary(null);
     try {
       const msg: ExtensionMessage = { type: "GET_PR_STATUS", repo, pr, force };
       const res = await chrome.runtime.sendMessage<
@@ -62,6 +71,20 @@ export const App: React.FC = () => {
 
       if (res?.success) {
         setPRStatus(res.data);
+        // Asynchronously fetch AI summary and clean patch
+        chrome.runtime
+          .sendMessage<ExtensionMessage, ExtensionResponse<ExtensionSummaryResponse>>({
+            type: "GET_PR_SUMMARY",
+            repo,
+            pr,
+            force,
+          })
+          .then((sumRes) => {
+            if (sumRes?.success) {
+              setPRSummary(sumRes.data);
+            }
+          })
+          .catch(() => {});
       } else {
         setErrorMsg(res?.error?.message || "Failed to load scan");
       }
@@ -89,6 +112,7 @@ export const App: React.FC = () => {
 
       if (res?.success) {
         setPRStatus(res.data);
+        fetchStatusForPR(activePR.repo, activePR.pr, true);
       } else {
         setErrorMsg(res?.error?.message || "Scan failed to initiate");
       }
@@ -168,6 +192,38 @@ export const App: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  }
+
+  function handleCustomPRSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    const input = customPRInput.trim();
+    if (!input) return;
+
+    // Check if input is a full URL or repo#pr
+    const urlMatch = input.match(/github\.com\/([^/]+)\/([^/]+)\/pull\/(\d+)/);
+    if (urlMatch) {
+      const repo = `${urlMatch[1]}/${urlMatch[2]}`;
+      const pr = parseInt(urlMatch[3], 10);
+      setActivePR({ repo, pr });
+      fetchStatusForPR(repo, pr);
+      return;
+    }
+
+    const shortMatch = input.match(/^([^/]+)\/([^#]+)#(\d+)$/);
+    if (shortMatch) {
+      const repo = `${shortMatch[1]}/${shortMatch[2]}`;
+      const pr = parseInt(shortMatch[3], 10);
+      setActivePR({ repo, pr });
+      fetchStatusForPR(repo, pr);
+      return;
+    }
+
+    setErrorMsg("Invalid format. Use https://github.com/owner/repo/pull/1 or owner/repo#1");
+  }
+
+  function handleSelectScenario(repo: string, pr: number) {
+    setActivePR({ repo, pr });
+    fetchStatusForPR(repo, pr);
   }
 
   const totalFindings = prStatus
@@ -253,7 +309,22 @@ export const App: React.FC = () => {
         {/* Active PR Context */}
         {activePR ? (
           <div className="card">
-            <div className="section-label">Active Pull Request</div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div className="section-label">Active Pull Request</div>
+              <button
+                type="button"
+                className="unpair-link"
+                style={{ color: "#a2a59a", textDecoration: "none" }}
+                onClick={() => {
+                  setActivePR(null);
+                  setPRStatus(null);
+                  setPRSummary(null);
+                }}
+                title="Change active PR target"
+              >
+                Change ✕
+              </button>
+            </div>
             <div style={{ fontWeight: 700, fontSize: "13px", color: "#f2f2ed", marginBottom: "4px" }}>
               {activePR.repo} #{activePR.pr}
             </div>
@@ -336,6 +407,76 @@ export const App: React.FC = () => {
                   </div>
                 )}
 
+                {/* AI Summary / 1-Click Clean Patch if available */}
+                {prSummary?.summary?.clean_patch && (
+                  <div
+                    style={{
+                      marginTop: "10px",
+                      background: "#080908",
+                      border: "1px solid #d7ff35",
+                      borderRadius: "3px",
+                      padding: "8px",
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        marginBottom: "4px",
+                      }}
+                    >
+                      <span
+                        style={{
+                          background: "#d7ff35",
+                          color: "#070807",
+                          fontSize: "8px",
+                          fontWeight: 900,
+                          padding: "1px 4px",
+                          borderRadius: "2px",
+                        }}
+                      >
+                        1-CLICK REMEDIATION
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          navigator.clipboard.writeText(prSummary.summary?.clean_patch || "");
+                          setCopiedPatch(true);
+                          setTimeout(() => setCopiedPatch(false), 2000);
+                        }}
+                        style={{
+                          background: "#141714",
+                          border: "1px solid #343832",
+                          color: "#d7ff35",
+                          fontSize: "9px",
+                          fontWeight: 800,
+                          padding: "1px 5px",
+                          borderRadius: "2px",
+                          cursor: "pointer",
+                        }}
+                      >
+                        {copiedPatch ? "✓ COPIED" : "COPY PATCH"}
+                      </button>
+                    </div>
+                    <pre
+                      style={{
+                        fontSize: "9px",
+                        lineHeight: "1.3",
+                        color: "#3fb950",
+                        maxHeight: "80px",
+                        overflowY: "auto",
+                        whiteSpace: "pre-wrap",
+                        background: "#040504",
+                        padding: "4px",
+                        border: "1px solid #222622",
+                      }}
+                    >
+                      {prSummary.summary.clean_patch}
+                    </pre>
+                  </div>
+                )}
+
                 {/* Re-scan and Refresh Action Row */}
                 <div className="btn-action-row">
                   <button
@@ -378,12 +519,97 @@ export const App: React.FC = () => {
             )}
           </div>
         ) : (
-          <div className="card" style={{ textAlign: "center", padding: "24px 12px" }}>
-            <div style={{ fontSize: "22px", marginBottom: "8px" }}>🔍</div>
-            <div className="card-title">No Active PR Detected</div>
-            <p style={{ color: "#a2a59a", fontSize: "11px", lineHeight: "1.5" }}>
-              Navigate to any GitHub Pull Request to view inline risk analysis, BARQAI reasoning, and supply chain findings.
-            </p>
+          <div className="card" style={{ padding: "14px 12px" }}>
+            <div style={{ textAlign: "center", marginBottom: "12px" }}>
+              <div style={{ fontSize: "20px", marginBottom: "4px" }}>🔍</div>
+              <div className="card-title" style={{ marginBottom: "2px" }}>Inspect Pull Request</div>
+              <p style={{ color: "#a2a59a", fontSize: "10px", lineHeight: "1.4" }}>
+                Navigate to any PR on GitHub, or test instant live security forensics on demo scenarios below:
+              </p>
+            </div>
+
+            {/* Quick Demo Scenarios */}
+            <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginBottom: "12px" }}>
+              <button
+                type="button"
+                className="btn-secondary"
+                style={{
+                  margin: 0,
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  borderColor: "#da3633",
+                  color: "#ff6b5e",
+                  padding: "6px 8px",
+                }}
+                onClick={() => handleSelectScenario("codefort-sec/vulnerable-test-repo", 1)}
+              >
+                <span>🚨 Test Malicious PR #1 (Dropper)</span>
+                <span style={{ fontSize: "9px", background: "rgba(248,81,73,0.2)", padding: "1px 4px" }}>BLOCKED</span>
+              </button>
+
+              <button
+                type="button"
+                className="btn-secondary"
+                style={{
+                  margin: 0,
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  borderColor: "#9e6a03",
+                  color: "#d29922",
+                  padding: "6px 8px",
+                }}
+                onClick={() => handleSelectScenario("codefort-sec/vulnerable-test-repo", 2)}
+              >
+                <span>⚠️ Test Typosquat PR #2 (reqeusts)</span>
+                <span style={{ fontSize: "9px", background: "rgba(210,153,34,0.2)", padding: "1px 4px" }}>REVIEW</span>
+              </button>
+
+              <button
+                type="button"
+                className="btn-secondary"
+                style={{
+                  margin: 0,
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  borderColor: "#238636",
+                  color: "#3fb950",
+                  padding: "6px 8px",
+                }}
+                onClick={() => handleSelectScenario("codefort-sec/clean-test-repo", 1)}
+              >
+                <span>🛡️ Test Clean PR #1 (Baseline)</span>
+                <span style={{ fontSize: "9px", background: "rgba(63,185,80,0.2)", padding: "1px 4px" }}>PASS</span>
+              </button>
+            </div>
+
+            {/* Manual PR URL Lookup Form */}
+            <form onSubmit={handleCustomPRSubmit}>
+              <div className="section-label">Or Inspect Any Public PR:</div>
+              <input
+                type="text"
+                className="input-field"
+                placeholder="e.g. owner/repo#1 or GitHub PR URL"
+                value={customPRInput}
+                onChange={(e) => setCustomPRInput(e.target.value)}
+                style={{ marginBottom: "6px" }}
+              />
+              <button
+                type="submit"
+                className="btn-primary"
+                style={{ padding: "6px 10px", fontSize: "10px" }}
+              >
+                Analyze PR ↗
+              </button>
+            </form>
+
+            {errorMsg && (
+              <p style={{ color: "#ff6b5e", fontSize: "10px", marginTop: "6px" }}>
+                {errorMsg}
+              </p>
+            )}
           </div>
         )}
 
