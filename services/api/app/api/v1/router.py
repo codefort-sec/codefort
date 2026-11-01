@@ -3,6 +3,7 @@
 from fastapi import APIRouter
 from app.api.v1.auth import router as auth_router
 from app.api.v1.extension import router as extension_router
+from app.api.v1.github_webhooks import router as github_webhooks_router
 from app.api.v1.health import router as health_router
 from app.api.v1.remediation import router as remediation_router
 from app.api.v1.repositories import router as repositories_router
@@ -17,6 +18,8 @@ api_v1_router.include_router(auth_router)
 api_v1_router.include_router(repositories_router)
 api_v1_router.include_router(scans_router)
 api_v1_router.include_router(extension_router)
+api_v1_router.include_router(github_webhooks_router)
 api_v1_router.include_router(webhooks_router)
 api_v1_router.include_router(remediation_router)
+
 

@@ -229,6 +229,53 @@ flowchart TD
 
 ---
 
+## 🤖 Phase 4: GitHub Pull Request Automation & Checks API
+
+Whenever a developer opens or updates a GitHub Pull Request, CODEFORT automatically validates webhook authenticity, runs the 7-step scanning pipeline, and publishes status checks directly into GitHub.
+
+### 1. GitHub App Permissions
+Configure these repository permissions in [GitHub Developer Settings — Apps](https://github.com/settings/apps):
+
+| Permission | Access | Purpose |
+| :--- | :---: | :--- |
+| **Contents** | `Read` | Retrieve modified files and diff hunks |
+| **Pull requests** | `Read` | Inspect PR metadata, branches, and commit SHAs |
+| **Checks** | `Read & write` | Publish `CODEFORT Security` check runs, annotations, and conclusions |
+| **Metadata** | `Read` | Repository identification and installation tracking |
+
+**Webhook Events:** Subscribe to `pull_request` (filtering `opened`, `synchronize`, `reopened`) and `check_run`.
+
+### 2. Webhook Security & Idempotency
+- **Endpoint:** `POST https://your-domain.com/api/v1/github/webhook` (also aliased at `/api/v1/webhooks/github`)
+- **HMAC SHA-256 Validation:** Verifies the `X-Hub-Signature-256` header in constant time using `settings.GITHUB_WEBHOOK_SECRET`. Rejects invalid or missing signatures with **HTTP 403 Forbidden** (`INVALID_SIGNATURE`).
+- **Delivery Idempotency:** Tracks `X-GitHub-Delivery` UUIDs to reject missing delivery IDs with **HTTP 400 Bad Request** and ignore duplicate retries without triggering duplicate scans.
+
+### 3. The 7-Stage Automated Scanning Pipeline (`process_pull_request`)
+```
+01. PR Changes  ──> 02. Semgrep / AST  ──> 03. Dependency Intel  ──> 04. Workflow Linter
+                         │                      │                         │
+                         ▼                      ▼                         ▼
+05. Sandbox Telemetry  ──>  06. BARQAI Reasoning  ──>  07. Risk Engine (Deterministic)
+                                                               │
+                                                               ▼
+                                              08. GitHub Checks API (PASS / REVIEW / BLOCK)
+```
+
+1. **GitHub API Changes Retrieval:** Fetches modified files and diff hunks for the exact head commit SHA.
+2. **Semgrep / Static Analysis:** AST and regex pattern scanning for command injection, curl pipes, and credential harvesters.
+3. **Dependency Intelligence:** Evaluates package manifests against live OSV vulnerability database and Levenshtein typosquat heuristics.
+4. **Workflow Linter:** Audits GitHub Actions workflows for privilege escalation (`pull_request_target`) and unquoted script injection.
+5. **Isolated Dynamic Sandbox:** Simulates package execution, recording socket egress, spawned processes, and filesystem mutations.
+6. **BARQAI Security Intelligence:** Synthesizes evidence-linked explanations and correlates cross-engine signals.
+7. **Deterministic Risk Engine:** Backend strictly calculates the 0–100 risk score and verdict (`PASS`, `REVIEW`, `BLOCK`). AI never overrides the verdict.
+8. **GitHub Checks API Publication:** Calls `publish_check` with conclusion mapping:
+   - **`PASS`** ➔ `success` (🟢 Green check)
+   - **`REVIEW`** ➔ `neutral` (🟡 Yellow advisory notice)
+   - **`BLOCK`** ➔ `failure` (🔴 Red merge block)
+   - Includes line-level annotations on flagged code and comprehensive Markdown forensic summaries.
+
+---
+
 ## 🚀 Quick Start: Running & Testing
 
 ### 1. Run the Multi-Model Security Benchmark
@@ -246,7 +293,7 @@ python -m app.ai.eval_suite --compare
 ```bash
 cd services/api
 python -m pytest -v services/api/tests/
-# Result: 32 passed in ~20s (100% pass rate)
+# Result: 78 passed in ~60s across all 6 test suites (100% pass rate)
 ```
 
 ### 3. Build the Chrome Extension (Manifest V3)
