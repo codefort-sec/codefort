@@ -222,6 +222,7 @@ codefort/
 
 ## 👥 Maintainers & License
 
-- **Lead Maintainer**: [Mohammed Nishal (@nichroot)](https://github.com/nichroot)
+- **Lead Platform Maintainer**: [Mohammed Nishal (@nichroot)](https://github.com/nichroot)
+- **Lead AI Maintainer**: [Muhammad Farsheen (@muhammadfarshi)](https://github.com/muhammadfarshi)
 - **Organization**: [CodeFort Security](https://github.com/codefort-sec)
 - **License**: Apache 2.0
