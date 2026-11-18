@@ -3,6 +3,7 @@
 <p align="center">
   <a href="https://addons.mozilla.org/en-US/firefox/addon/codefort-guard/"><img src="https://img.shields.io/badge/Firefox_Add--ons-Official_Store-ff7139?style=for-the-badge&logo=firefox-browser" alt="Firefox Add-ons" /></a>
   <a href="https://codefort-web.vercel.app"><img src="https://img.shields.io/badge/Web_Dashboard-Live-00ff66?style=for-the-badge&logo=vercel" alt="Web Dashboard" /></a>
+  <a href="https://github.com/codefort-sec/barqai"><img src="https://img.shields.io/badge/AI_Engine_Repo-barqai-7928CA?style=for-the-badge&logo=github" alt="BarqAI Repo" /></a>
   <a href="https://codefort-lilac.vercel.app/docs"><img src="https://img.shields.io/badge/FastAPI_Engine-Live-00e5ff?style=for-the-badge&logo=fastapi" alt="FastAPI Core" /></a>
   <a href="https://github.com/codefort-sec/codefort/releases/tag/v0.1.3"><img src="https://img.shields.io/badge/Release-v0.1.3-ff0055?style=for-the-badge&logo=github" alt="Extension Release" /></a>
 </p>
@@ -29,6 +30,7 @@
 | **Web Dashboard** | [`codefort-web.vercel.app`](https://codefort-web.vercel.app) | Cyber Brutalist UI for PR forensics, policy management, & multi-repo audits |
 | **Barq-AI Copilot Studio** | [`codefort-web.vercel.app/chat`](https://codefort-web.vercel.app/chat) | Interactive AI security assistant & unified git diff code rewriter |
 | **Extension Setup Guide** | [`codefort-web.vercel.app/extension`](https://codefort-web.vercel.app/extension) | Step-by-step browser extension installer & pairing assistant |
+| **Barq-AI Engine Repo** | [`codefort-sec/barqai`](https://github.com/codefort-sec/barqai) | Dedicated AI reasoning engine, LoRA training pipeline, & benchmark datasets |
 | **Backend API Core** | [`codefort-lilac.vercel.app/docs`](https://codefort-lilac.vercel.app/docs) | FastAPI OpenAPI 3.0 documentation, detection engines, & remediation endpoints |
 | **Chrome Extension** | [`v0.1.3 (.zip)`](https://github.com/codefort-sec/codefort/releases/download/v0.1.3/codefort-guard-chrome-v0.1.3.zip) | Manifest V3 extension with PR badges, inline diff warnings, & side panel |
 | **Firefox Binaries** | [`v0.1.3 (.xpi)`](https://github.com/codefort-sec/codefort/releases/download/v0.1.3/codefort-guard-firefox-v0.1.3.xpi) / [`.zip`](https://github.com/codefort-sec/codefort/releases/download/v0.1.3/codefort-guard-firefox-v0.1.3.zip) | Standalone Mozilla WebExtension package (`codefort-guard@codefort.sec`) |
